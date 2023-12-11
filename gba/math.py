@@ -1,5 +1,8 @@
 import re
+from typing import List, Dict, Any, Optional
 
+from langchain.chains.base import Chain
+from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import LLM
 from langchain_core.prompts import PromptTemplate
 
@@ -13,17 +16,20 @@ PROMPT = PromptTemplate(
 )
 
 
-class Llama2Math:
-    def __init__(self, llm: LLM, prompt: PromptTemplate = PROMPT):
-        self._llm = llm
-        self._prompt = prompt
+class Llama2Math(Chain):
+    llm: LLM
+    prompt: PromptTemplate = PROMPT
 
-    def run(self, expression: str):
-        """A tool for evaluating mathematical expressions. Do not use variables in expression."""
-        return self.__call__(expression)
+    @property
+    def input_keys(self) -> List[str]:
+        return ["message"]
 
-    def __call__(self, message: str) -> str:
-        output = (self._prompt | self._llm).invoke({"question": message})
+    @property
+    def output_keys(self) -> List[str]:
+        return ["result"]
+
+    def _call(self, inputs: Dict[str, Any], run_manager: Optional[CallbackManagerForChainRun] = None) -> Dict[str, Any]:
+        output = (self.prompt | self.llm).invoke({"question": inputs["message"]})
         code = self._parse_output(output)
         code = code.strip("\n")
 
@@ -34,7 +40,7 @@ class Llama2Math:
             loc_variables = {}
             exec(code, globals(), loc_variables)
             result = loc_variables["result"]
-            return f"{result:.5f}"
+            return {"result": f"{result:.5f}"}
         except Exception as e:
             raise ValueError(f"LLM output could not be evaluated (output='{output}', error='{e}')")
 
