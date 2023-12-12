@@ -22,9 +22,3 @@ def search_images(query: str):
 def create_event(title: str, datetime: str):
     """A tool for adding an event to a calendar."""
     return f"Event {title} successfully created!"
-
-
-def calculate(expression: str):
-    """A tool for evaluating mathematical expressions. Do not use variables in expression."""
-    result = ne.evaluate(expression.replace("^", "**"))
-    return f"{result:.5f}"
