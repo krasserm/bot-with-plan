@@ -2,7 +2,7 @@ import numexpr as ne
 
 
 # ------------------------------------
-#  Tool mockups used in example.ipynb
+#  Tool mockups used in example_agent.ipynb
 # ------------------------------------
 
 

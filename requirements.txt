@@ -3,3 +3,4 @@ langchain
 langchain-experimental
 numexpr
 notebook
+jsonref
