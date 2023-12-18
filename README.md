@@ -1,4 +1,4 @@
-## Open source LLM agents with schema-based generation of function calls
+## Open LLM agents with schema-based generation of function calls
 
 Experimental implementation of a function calling interface for a Llama-2 chat model 
 with [LangChain](https://github.com/langchain-ai/langchain). It uses the [grammar-based sampling](https://github.com/ggerganov/llama.cpp/pull/1773)
