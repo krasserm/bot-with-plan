@@ -1,4 +1,4 @@
-## Llama-2 agent with grammar-based sampling of function calls
+## Open source LLM agents with schema-based generation of function calls
 
 Experimental implementation of a function calling interface for a Llama-2 chat model 
 with [LangChain](https://github.com/langchain-ai/langchain). It uses the [grammar-based sampling](https://github.com/ggerganov/llama.cpp/pull/1773)
@@ -7,21 +7,32 @@ a tool-specific schema. The resulting interface is similar to the [ChatOpenAI](h
 function calling interface and can be used with LangChain's [agent framework](https://python.langchain.com/docs/modules/agents/).
 
 To increase the probability that the model generates an appropriate tool call at each step 
-i.e. selects the right tool and arguments, an unconstrained reasoning phase should precede 
-the constrained tool call generation phase. Otherwise, attention to the thoughts generated 
+i.e. selects the right tool and arguments, an unconstrained reasoning phase precedes the 
+constrained tool call generation phase. Otherwise, attention to the thoughts generated 
 during the reasoning phase is not possible.
 
 Llama-2 is known to have some zero-shot tool usage capabilities, but they are limited. In 
-its current state, the implementation is a simple prototype for demonstrating grammar-based 
-sampling in LangChain agents. It is general enough to be used with many other language models 
+its current state, the implementation is a simple prototype for demonstrating schema-based 
+generation in LangChain agents. It is general enough to be used with many other language models 
 supported by llama.cpp, after some tweaks to the prompt templates.
 
-More details in [example.ipynb](example.ipynb).
+More details in [example_agent.ipynb](example_agent.ipynb).
+
+### JSON mode
+
+Components from this repository can also be used to run LLMs in JSON mode. JSON mode is a 
+narrower concept than tool calling and can be used to constrain model output to a user-defined
+schema (which can be the signature of a tool but also any other JSON schema) whereas tool calling 
+relies on an LLM to select an appropriate tool out of several provided tools, or even to decide 
+not calling a tool at all.
+
+See [example_json.ipynb](example_json.ipynb) for more details.
 
 ### Tools
 
-To give the agent the ability to solve mathematical problems, [Llama2Math](https://github.com/krasserm/grammar-based-agents/blob/master/gba/math.py) 
-implements an interface that interprets and evaluates mathematical queries using a LLM. 
+The tools used in [example_agent.ipynb](example_agent.ipynb) are mainly [mockups](example_tools.py) at the moment, 
+except the `calculate` tool which is backed by [Llama2Math](gba/math.py) for interpreting and
+evaluating mathematical queries using an LLM. 
 
 See [example_math.ipynb](example_math.ipynb) for more details.
 
@@ -37,21 +48,30 @@ wget https://huggingface.co/TheBloke/Llama-2-70B-Chat-GGUF/resolve/main/llama-2-
 
 # Download math LLM CodeLlama-7B
 wget https://huggingface.co/TheBloke/CodeLlama-7B-Instruct-GGUF/resolve/main/codellama-7b-instruct.Q4_K_M.gguf?download=true -O models/codellama-7b-instruct.Q4_K_M.gguf
+
+# Download math Mistral-7B-Instruct-v0.1
+wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q8_0.gguf?download=true -O model/mistral-7b-instruct-v0.1.Q8_0.gguf
 ```
 
 ### Docker image
 
-Either build a [CUDA-enabled llama.cpp Docker image](https://github.com/ggerganov/llama.cpp/blob/master/README.md#docker-with-cuda)
-yourself (`full-cuda` variant) or use the pre-build [ghcr.io/krasserm/llama.cpp:full-cuda](https://github.com/krasserm/grammar-based-agents/pkgs/container/llama.cpp)
-Docker image as done in the next section.
+Either build a [CUDA-enabled llama.cpp Docker image](https://github.com/ggerganov/llama.cpp/blob/master/README.md#docker-with-cuda) yourself (`full-cuda` variant) or use the pre-build
+[ghcr.io/krasserm/llama.cpp:full-cuda](https://github.com/krasserm/grammar-based-agents/pkgs/container/llama.cpp) Docker image as done in the next section .
 
-### Launch server
+### Run LLM servers
 
-#### Agent LLM
+#### Llama-2
 
 ```shell
 docker run --gpus all --rm -p 8080:8080 -v $(realpath models):/models ghcr.io/krasserm/llama.cpp:full-cuda \
   --server -m /models/llama-2-70b-chat.Q4_0.gguf --n-gpu-layers 83 --host 0.0.0.0 --port 8080
+```
+
+#### Mistral
+
+```shell
+docker run --gpus all --rm -p 8081:8080 -v /home/martin/Models:/models ghcr.io/krasserm/llama.cpp:full-cuda \
+  --server -m /models/mistral-7b-instruct-v0.1.Q8_0.gguf --n-gpu-layers 43 --host 0.0.0.0 --port 8080
 ```
 
 #### Math LLM
@@ -70,10 +90,8 @@ conda env create -f environment.yml
 conda activate grammar-based-agents
 ```
 
-### Run examples
+### Run notebook server
 
 ```shell
 jupyter notebook
 ```
-
-and then select `example.ipynb`.

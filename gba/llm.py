@@ -26,6 +26,7 @@ class LlamaCppClient(LLM):
             stop: Optional[List[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             schema: Optional[Dict[str, Any]] = None,
+            prop_order: Optional[List[str]] = (),
             **kwargs: Any,
     ) -> str:
 
@@ -41,7 +42,7 @@ class LlamaCppClient(LLM):
         } | kwargs
 
         if schema is not None:
-            payload["grammar"] = schema_to_grammar(schema, prop_order=["tool", "arguments"])
+            payload["grammar"] = schema_to_grammar(schema, prop_order=prop_order)
 
         resp = requests.post(url=self.url, headers={"Content-Type": "application/json"}, json=payload)
         return resp.json()["content"].strip()

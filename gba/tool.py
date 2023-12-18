@@ -77,6 +77,7 @@ class ToolCalling(BaseChatModel):
 
         tools = tools + [response_tool]
         tools_schema = tools_to_schema(tools)
+        prop_order = ["tool", "arguments"]
 
         augmented_messages, tool_call_num = self._augment_messages(prev_messages, tools)
 
@@ -88,7 +89,12 @@ class ToolCalling(BaseChatModel):
         augmented_message = HumanMessage(content=thought_prompt)
         augmented_messages.append(augmented_message)
 
-        response_message = self.model.predict_messages(augmented_messages, stop=stop, schema=None if self.reason_step else tools_schema)
+        response_message = self.model.predict_messages(
+            augmented_messages,
+            stop=stop,
+            schema=None if self.reason_step else tools_schema,
+            prop_order=prop_order,
+        )
         print(f"\nReasoning: {response_message.content}")
 
         if self.reason_step:
@@ -97,7 +103,12 @@ class ToolCalling(BaseChatModel):
             tool_call_gen_request = HumanMessage(content=self.tool_call_gen_prompt)
             augmented_messages.append(tool_call_gen_request)
 
-            response_message = self.model.predict_messages(augmented_messages, stop=stop, schema=tools_schema)
+            response_message = self.model.predict_messages(
+                augmented_messages,
+                stop=stop,
+                schema=tools_schema,
+                prop_order=prop_order,
+            )
 
         tool_call = json.loads(response_message.content)
 
