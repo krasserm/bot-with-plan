@@ -23,7 +23,6 @@ Call exactly one of these tools at each step. Call tool 'respond_to_user' if you
 
 Avoid guessing tool call results. Only rely on information returned from tool calls."""
 
-
 TOOL_CALL_TEMPLATE = "Please make tool call {tool_call_num} for me: {tool_call}"
 TOOL_CALL_RESULT_TEMPLATE = "Use the result of tool call {tool_call_num}: {tool_call_result}"
 TOOL_CALL_GEN_PROMPT = "Now make the tool call, nothing else."
@@ -95,7 +94,7 @@ class ToolCalling(BaseChatModel):
             schema=None if self.reason_step else tools_schema,
             prop_order=prop_order,
         )
-        print(f"\nReasoning: {response_message.content}")
+        print(f"\nThoughts: {response_message.content}")
 
         if self.reason_step:
             augmented_messages.append(response_message)
