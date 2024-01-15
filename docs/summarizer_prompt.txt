@@ -1,0 +1,23 @@
+Task:
+
+```
+Search the internet for information about Vittoria Ceretti's age.
+```
+
+Result:
+
+```
+Vittoria Ceretti is an Italian fashion model renowned for her significant impact on the fashion industry. At the age of 25, she has already walked for esteemed fashion houses like Chanel, Dolce & Gabbana, and Versace, marking her prominence in the world of high fashion. Her remarkable presence extends to the covers of major fashion magazines, including Vogue, highlighting her as a leading figure in contemporary modeling.
+```
+
+Summarize the result so that it is an answer to the task.
+
+- if you cannot find the answer in the result, say that you don't know the answer.
+- if you can answer only partially, answer with those parts available in the result.
+- never add additional information to your answer.
+
+Your answer should be a single sentence. Use the following output format:
+
+{
+  "answer": <your answer to the user request>
+}

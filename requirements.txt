@@ -1,6 +1,10 @@
 requests
 langchain
 langchain-experimental
+sentence-transformers
+chromadb
 numexpr
 notebook
 jsonref
+tqdm
+pytest

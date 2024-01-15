@@ -1,117 +1,161 @@
-from typing import Any, List, Optional, Tuple, Union
+import json
+from abc import ABC, abstractmethod
+from typing import List
 
-from langchain.tools import StructuredTool
-from langchain.agents import BaseSingleActionAgent
-from langchain.agents.format_scratchpad.openai_functions import format_to_openai_function_messages
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
-from langchain.prompts.chat import (
-    BaseMessagePromptTemplate,
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-)
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    BasePromptTemplate,
-)
-from langchain.schema.agent import AgentActionMessageLog
-from langchain.schema.messages import AIMessage, BaseMessage
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_experimental.chat_models.llm_wrapper import ChatWrapper
+from pydantic import BaseModel
+
+from gba.utils import prop_order_from_schema
 
 
-from gba.tool import ToolCalling
+TOOL_DOC_TEMPLATE = """{name}: {doc}"""
 
 
-# ----------------------------------------------
-#  Inspired by LangChain's OpenAIFunctionsAgent
-# ----------------------------------------------
+PROMPT_TEMPLATE = """You are given a user request and context information. You can select one of the following actions:
+
+```
+{action_docs}
+```
+
+User request:
+
+```
+{request}
+```
+
+Context information:
+
+```
+{context}
+```
+
+Always answer in the following JSON format:
+
+{{
+  "context_information_summary": <summary of available context information. Always summarize calculation results if present>,
+  "thoughts": <your thoughts about what to do in a next step>,
+  "task": <task description for the next step in natural language, including relevant input values>,
+  "selected_action": <the name of the selected action for the next step. Use one of [{action_names}]>
+}}
+
+For selecting the next action or providing a final answer, always use context information only."""
 
 
-class Agent(BaseSingleActionAgent):
-    model: ToolCalling
-    tools: List[StructuredTool]
-    prompt: BasePromptTemplate
+class PlanResult(BaseModel):
+    context_information_summary: str
+    thoughts: str
+    task: str
+    selected_action: str
 
+
+class ScratchpadEntry(BaseModel):
+    task: str
+    result: str
+
+    def __str__(self):
+        return f"Task: {self.task}\nResult: {self.result}"
+
+
+class Scratchpad(BaseModel):
+    entries: list[ScratchpadEntry] = []
+
+    def is_empty(self) -> bool:
+        return len(self.entries) == 0
+
+    def clear(self):
+        self.entries = []
+
+    def add(self, task: str, result: str):
+        self.entries.append(ScratchpadEntry(task=task, result=result))
+
+    def __str__(self):
+        return "\n\n".join(str(entry) for entry in self.entries)
+
+
+class Tool(ABC):
     @property
-    def input_keys(self) -> List[str]:
-        return ["input"]
+    @abstractmethod
+    def name(self) -> str:
+        ...
 
-    def plan(
-        self,
-        intermediate_steps: List[Tuple[AgentAction, str]],
-        callbacks: Callbacks = None,
-        with_functions: bool = True,
-        **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
-        agent_scratchpad = format_to_openai_function_messages(intermediate_steps)
-        selected_inputs = {k: kwargs[k] for k in self.prompt.input_variables if k != "agent_scratchpad"}
-        full_inputs = dict(**selected_inputs, agent_scratchpad=agent_scratchpad)
+    @abstractmethod
+    def run(self, request: str, task: str, scratchpad: Scratchpad, **kwargs) -> str:
+        ...
 
-        messages = self.prompt.format_prompt(**full_inputs).to_messages()
+    def doc(self):
+        return TOOL_DOC_TEMPLATE.format(name=self.name, doc=self.run.__doc__)
 
-        if with_functions:
-            predicted_message = self.model.predict_messages(messages, tools=self.tools, callbacks=callbacks)
+
+class Agent:
+    def __init__(self, model: ChatWrapper, tools: List[Tool], conversational: bool = False):
+        self.model = model
+        self.tools = {tool.name: tool for tool in sorted(tools, key=lambda tool: tool.name)}
+        self.conversational = conversational
+        self.scratchpad = Scratchpad()
+        self.history = []
+
+    def plan(self, request: str) -> PlanResult:
+        action_docs = "\n".join([f"- {tool.doc()}" for tool in self.tools.values()])
+        action_names = ", ".join(self.tools.keys())
+
+        if self.scratchpad.is_empty():
+            context_str = "<no previous steps available>"
         else:
-            predicted_message = self.model.predict_messages(messages, callbacks=callbacks)
+            context_str = str(self.scratchpad)
 
-        return self._parse_prediction(predicted_message)
-
-    async def aplan(
-        self,
-        intermediate_steps: List[Tuple[AgentAction, str]],
-        callbacks: Callbacks = None,
-        **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
-        raise NotImplementedError
-
-    @classmethod
-    def from_llm_and_tools(
-        cls,
-        model: ToolCalling,
-        tools: List[StructuredTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
-        extra_prompt_messages: Optional[List[BaseMessagePromptTemplate]] = None,
-        **kwargs: Any,
-    ) -> BaseSingleActionAgent:
-        prompt = cls.create_prompt(extra_prompt_messages=extra_prompt_messages)
-        return cls(
-            model=model,
-            prompt=prompt,
-            tools=tools,
-            callback_manager=callback_manager,
-            **kwargs,
+        user_prompt = PROMPT_TEMPLATE.format(
+            action_docs=action_docs,
+            action_names=action_names,
+            request=request,
+            context=context_str,
         )
 
-    @classmethod
-    def create_prompt(
-            cls, extra_prompt_messages: Optional[List[BaseMessagePromptTemplate]] = None
-    ) -> BasePromptTemplate:
-        _prompts = extra_prompt_messages or []
-        messages = [
-            *_prompts,
-            HumanMessagePromptTemplate.from_template("{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
-        return ChatPromptTemplate(messages=messages)
+        messages = self.history + [HumanMessage(content=user_prompt)]
+        schema = PlanResult.model_json_schema()
 
-    @staticmethod
-    def _parse_prediction(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
-        if not isinstance(message, AIMessage):
-            raise TypeError(f"Expected an AI message got {type(message)}")
+        response = self.model.invoke(
+            input=messages,
+            schema=schema,
+            prop_order=prop_order_from_schema(schema),
+            prompt_ext=self.model.ai_n_beg,
+        )
 
-        tool_call = message.additional_kwargs.get("tool_call")
+        return PlanResult(**json.loads(response.content))
 
-        if tool_call is None:
-            return AgentFinish(return_values={"output": message.content}, log=message.content)
-        else:
-            tool_name = tool_call["tool"]
-            tool_input = tool_call["arguments"]
+    def run(self, request: str) -> str:
+        from gba.tools.ask import AskTool
+        from gba.tools.respond import RespondTool
 
-            return AgentActionMessageLog(
-                tool=tool_name,
-                tool_input=tool_input,
-                log=f"\nInvoking: `{tool_name}` with `{tool_input}`\n",
-                message_log=[message],
-            )
+        while True:
+            plan_result = self.plan(request)
 
+            task = plan_result.task
+            action = plan_result.selected_action
+            action = action.replace("-", "_")
+
+            if "," in action:
+                action = action.split(",")[0]
+                action = action.strip()
+
+            if not action:
+                action = RespondTool.name
+
+            if action not in [AskTool.name, RespondTool.name]:
+                print(f"Task: {plan_result.task}")
+
+            tool = self.tools[action]
+            tool_result = tool.run(request, task, self.scratchpad)
+
+            if action != RespondTool.name:
+                print(f"Observation: {tool_result}")
+                print()
+
+            self.scratchpad.add(task, tool_result)
+
+            if action == RespondTool.name:
+                if self.conversational:
+                    self.history.append(HumanMessage(content=request))
+                    self.history.append(AIMessage(content=tool_result))
+                self.scratchpad.clear()
+                return tool_result

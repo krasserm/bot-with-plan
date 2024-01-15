@@ -27,11 +27,16 @@ class LlamaCppClient(LLM):
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             schema: Optional[Dict[str, Any]] = None,
             prop_order: Optional[List[str]] = (),
+            prompt_ext: Optional[str] = None,
             **kwargs: Any,
     ) -> str:
 
+        if prompt_ext is not None:
+            prompt = prompt + prompt_ext
+
         payload = {
             "prompt": prompt,
+            "stop": stop,
             "n_predict": self.n_predict,
             "temperature": self.temperature,
             "top_k": self.top_k,
@@ -45,4 +50,6 @@ class LlamaCppClient(LLM):
             payload["grammar"] = schema_to_grammar(schema, prop_order=prop_order)
 
         resp = requests.post(url=self.url, headers={"Content-Type": "application/json"}, json=payload)
-        return resp.json()["content"].strip()
+        resp_json = resp.json()
+
+        return resp_json["content"].strip()

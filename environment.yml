@@ -1,8 +1,11 @@
 name: grammar-based-agents
 channels:
   - conda-forge
+  - pytorch
 dependencies:
   - python=3.9
+  - pytorch=2.1
+  - cpuonly
   - pip
   - pip:
     - -r requirements.txt

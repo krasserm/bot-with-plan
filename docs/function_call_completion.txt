@@ -1,0 +1,1 @@
+Call: search_internet(query='Vittoria Ceretti')

@@ -1,0 +1,27 @@
+ser request:
+
+```
+Who is Leonardo DiCaprio's current girlfriend and what is her age raised to the power of 0.7?
+```
+
+Context information:
+
+```
+Task: Search the internet for information about Leonardo DiCaprio's current girlfriend.
+Result: Leonardo DiCaprio's current girlfriend is Italian model Vittoria Ceretti.
+
+Task: Search the internet for information about Vittoria Ceretti's age.
+Result: Vittoria Ceretti is 25 years old.
+
+Task: Calculate the value of 25 raised to the power of 0.7.
+Result: The value of 25 raised to the power of 0.7 is approximately 9.51827.
+```
+
+Answer the user request using the available context information only but do not mention the existence of that context information. Use the following output format:
+
+{
+  "summary": <summarize the request and all results from the context information>,
+  "answer": <your detailed answer to the user request. Only answer what has been actually requested>
+}
+
+Never make your own calculations because you are bad at math.
