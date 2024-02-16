@@ -1,4 +1,4 @@
-## Open LLM agents with schema-based generation of function calls
+## Open LLM agents with schema-guided generation of function calls
 
 LLM agents use large language models (LLMs) to decide which tools to use for interacting with their 
 environment during multi-step task solving. Tool usage is done via function calling. The LLM is 
