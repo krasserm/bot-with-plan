@@ -4,8 +4,8 @@ from langchain_core.messages import HumanMessage
 from langchain_experimental.chat_models.llm_wrapper import ChatWrapper
 from pydantic import BaseModel
 
-from gba.agent import Scratchpad, Tool
-from gba.utils import prop_order_from_schema
+from gba.tools.base import Tool
+from gba.utils import prop_order_from_schema, Scratchpad
 
 
 class Result(BaseModel):
@@ -46,7 +46,7 @@ class RespondTool(Tool):
         if scratchpad.is_empty():
             context_str = task
         else:
-            context_str = str(scratchpad)
+            context_str = "\n\n".join(str(entry) for entry in scratchpad.entries)
 
         prompt = PROMPT_TEMPLATE.format(request=request, context=context_str)
         schema = Result.model_json_schema()

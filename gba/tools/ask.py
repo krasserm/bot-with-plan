@@ -1,4 +1,5 @@
-from gba.agent import Scratchpad, Tool
+from gba.tools.base import Tool
+from gba.utils import Scratchpad
 
 
 class AskTool(Tool):

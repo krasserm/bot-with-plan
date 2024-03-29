@@ -3,8 +3,8 @@ import inspect
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_experimental.chat_models.llm_wrapper import ChatWrapper
 
-from gba.agent import TOOL_DOC_TEMPLATE, Scratchpad, Tool
-from gba.utils import extract_code, exec_code
+from gba.tools.base import Tool, TOOL_DOC_TEMPLATE
+from gba.utils import exec_code, extract_code, Scratchpad
 
 
 SYSTEM_PROMPT = """Provide answers in Python wrapped into ```."""

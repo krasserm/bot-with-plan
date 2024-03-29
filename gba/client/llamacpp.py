@@ -4,7 +4,7 @@ import requests
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
-from gba.grammar import schema_to_grammar
+from gba.client.grammar import schema_to_grammar
 
 
 class LlamaCppClient(LLM):

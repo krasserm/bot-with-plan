@@ -1,6 +1,6 @@
 from pytest import fixture
 
-from gba.agent import Scratchpad
+from gba.utils import Scratchpad
 from gba.tools import CalculateTool
 
 

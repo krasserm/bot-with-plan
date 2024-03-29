@@ -2,8 +2,8 @@ import inspect
 
 from langchain_core.language_models import LLM
 
-from gba.agent import TOOL_DOC_TEMPLATE, Scratchpad, Tool
-from gba.utils import parse_function_call
+from gba.tools.base import Tool, TOOL_DOC_TEMPLATE
+from gba.utils import parse_function_call, Scratchpad
 
 
 PROMPT_TEMPLATE = '''

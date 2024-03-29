@@ -1,6 +1,6 @@
 from pytest import fixture
 
-from gba.agent import Scratchpad, ScratchpadEntry
+from gba.utils import ScratchpadEntry, Scratchpad
 from gba.tools import RespondTool
 
 

@@ -1,4 +1,4 @@
-name: grammar-based-agents
+name: grammar-based-agent-autotrain
 channels:
   - pytorch
   - nvidia/label/cuda-11.8.0
@@ -9,4 +9,4 @@ dependencies:
   - cuda-toolkit
   - pip
   - pip:
-    - -r requirements.txt
+    - autotrain-advanced

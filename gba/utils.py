@@ -1,5 +1,42 @@
 import ast
+import json
 import re
+from typing import List
+
+from pydantic import BaseModel
+
+
+class ScratchpadEntry(BaseModel):
+    task: str
+    result: str
+
+    def __str__(self):
+        return f"Task: {self.task}\nResult: {self.result}"
+
+
+class Scratchpad(BaseModel):
+    entries: List[ScratchpadEntry] = []
+
+    def is_empty(self) -> bool:
+        return len(self.entries) == 0
+
+    def clear(self):
+        self.entries = []
+
+    def add(self, task: str, result: str):
+        self.entries.append(ScratchpadEntry(task=task, result=result))
+
+    def entries_repr(self) -> str:
+        if self.is_empty():
+            return "<no previous steps available>"
+        else:
+            return "\n\n".join(str(entry) for entry in self.entries)
+
+    def results_repr(self) -> str:
+        if self.is_empty():
+            return "<no context information available>"
+        else:
+            return "\n".join([se.result for se in self.entries])
 
 
 def object_from_schema(schema, return_keys=False):
@@ -31,6 +68,13 @@ def _object_from_schema(schema, keys):
         return schema['description']
     else:
         return None
+
+
+def extract_json(s: str) -> dict:
+    match = re.search(r"```json(.*)```", s, re.DOTALL)
+    if not match:
+        raise ValueError(f"json could not be extracted (input='{s}')")
+    return json.loads(match.group(1))
 
 
 def extract_code(s: str) -> str:
