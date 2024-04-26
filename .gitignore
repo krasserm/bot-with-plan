@@ -1,4 +1,5 @@
-output*
-project*
 .chroma
 .ipynb_checkpoints
+gba-planner*
+models
+output*

@@ -1,15 +1,20 @@
 import json
 
-from langchain_core.messages import HumanMessage
-from langchain_experimental.chat_models.llm_wrapper import ChatWrapper
 from pydantic import BaseModel
+
+from gba.client import ChatClient
+from gba.client.chat import Llama3Instruct
 
 
 class Result(BaseModel):
-    answer: str
+    response: str
 
 
-PROMPT_TEMPLATE = """Task:
+SYSTEM_PROMPT = """You are a helpful assistant."""
+
+USER_PROMPT_TEMPLATE = """You are given a task description and the result of attempting to solve that task.
+
+Task description:
 
 ```
 {task}
@@ -21,35 +26,34 @@ Result:
 {result}
 ```
 
-Summarize the result so that it is an answer to the task.
+Formulate the result as response to the task description.
+Only extract from the result what is absolutely necessary.
 
-- if you cannot find the answer in the result, say that you don't know the answer.
-- if you can answer only partially, answer with those parts available in the result.
-- never add additional information to your answer.
+The response should be a single sentence in natural language.
+The response should be as short as possible and only contain what has been requested in the task description.
 
-Your answer should be a single sentence. Use the following output format:
+Use the following output format:
 
 {{
-  "answer": <your answer to the user request>
+  "response": <generated response>
 }}"""
 
 
-OPTION_1 = "Your answer should be a single sentence"
-OPTION_2 = "Your answer should be a single sentence with at most 10 words"
-
-
 class ResultSummarizer:
-    def __init__(self, model: ChatWrapper):
-        self.model = model
+    def __init__(self, model: Llama3Instruct):
+        self.client = ChatClient(model=model)
 
-    def summarize(self, task: str, result: str) -> str:
-        user_prompt = PROMPT_TEMPLATE.format(task=task, result=result)
+    def summarize(self, task: str, result: str, temperature: float = -1) -> str:
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": USER_PROMPT_TEMPLATE.format(task=task, result=result)},
+        ]
 
-        ai_message = self.model.invoke(
-            input=[HumanMessage(content=user_prompt)],
+        message = self.client.complete(
+            messages, 
             schema=Result.model_json_schema(),
-            prompt_ext=self.model.ai_n_beg,
+            temperature=temperature,
         )
 
-        result = json.loads(ai_message.content)
-        return result["answer"]
+        result = json.loads(message["content"])
+        return result["response"]

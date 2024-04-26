@@ -23,6 +23,9 @@ class Scratchpad(BaseModel):
     def clear(self):
         self.entries = []
 
+    def copy(self) -> "Scratchpad":
+        return Scratchpad(entries=self.entries.copy())
+
     def add(self, task: str, result: str):
         self.entries.append(ScratchpadEntry(task=task, result=result))
 
@@ -77,22 +80,35 @@ def extract_json(s: str) -> dict:
     return json.loads(match.group(1))
 
 
-def extract_code(s: str) -> str:
-    match = re.search(r"```(.*)```", s, re.DOTALL)
+def extract_code(s: str, remove_print_statements: bool = False) -> str:
+    match = re.search(r"```python(.*?)```", s, re.DOTALL)
     if not match:
         raise ValueError(f"code could not be extracted (input='{s}')")
-    return match.group(1)
+    code = match.group(1)
+    if remove_print_statements:
+        code = _remove_print_statements(code)
+    return code
+
+
+def _remove_print_statements(code: str) -> str:
+    import ast
+
+    class RemovePrints(ast.NodeTransformer):
+        def visit_Expr(self, node):
+            if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id == 'print':
+                return None
+            return node
+
+    tree = ast.parse(code)
+    tree = RemovePrints().visit(tree)
+    return f"\n{ast.unparse(tree)}\n"
 
 
 def exec_code(code: str, result_variable_name: str):
     try:
         loc_variables = {}
         exec(code, globals(), loc_variables)
-        result = loc_variables[result_variable_name]
-
-        if isinstance(result, float):
-            result = round(result, 5)
-        return result
+        return loc_variables[result_variable_name]
     except Exception as e:
         raise ValueError(f"code could not be executed (code='{code}')", e)
 

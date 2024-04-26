@@ -15,7 +15,7 @@ class Agent:
 
     def run(self, request: str) -> str:
         from gba.tools.ask import AskTool
-        from gba.tools.calc import CalculateTool
+        from gba.tools.calculate import CalculateTool
         from gba.tools.respond import RespondTool
 
         while True:

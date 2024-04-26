@@ -1,19 +1,22 @@
 import json
 
-from langchain_core.messages import HumanMessage
-from langchain_experimental.chat_models.llm_wrapper import ChatWrapper
 from pydantic import BaseModel
 
+from gba.client import ChatClient
+from gba.client.chat import Llama3Instruct
 from gba.tools.base import Tool
-from gba.utils import prop_order_from_schema, Scratchpad
+from gba.utils import Scratchpad
 
 
 class Result(BaseModel):
-    summary: str
     answer: str
 
 
-PROMPT_TEMPLATE = """User request:
+SYSTEM_PROMPT = """You are a helpful assistant."""
+
+USER_PROMPT_TEMPLATE = """You are given a user request and context information:
+
+User request:
 
 ```
 {request}
@@ -25,38 +28,49 @@ Context information:
 {context}
 ```
 
-Answer the user request using the available context information only but do not mention the existence of that context information. Use the following output format:
+Answer the user request using the available context information only. 
+The answer should be a single sentence in natural language.
+Use the following output format:
 
 {{
-  "summary": <summarize the request and all results from the context information>,
-  "answer": <your detailed answer to the user request. Only answer what has been actually requested>
-}}
-
-Never make your own calculations because you are bad at math."""
+  "answer": <generated answer>
+}}"""
 
 
 class RespondTool(Tool):
     name: str = "respond_to_user"
 
-    def __init__(self, model: ChatWrapper):
-        self.model = model
+    def __init__(self, model: Llama3Instruct):
+        self.client = ChatClient(model=model)
 
-    def run(self, request: str, task: str, scratchpad: Scratchpad, **kwargs) -> str:
+    def run(
+            self, 
+            request: str, 
+            task: str, 
+            scratchpad: Scratchpad, 
+            temperature: float = -1, 
+            return_user_prompt: bool = False, 
+            **kwargs,
+    ) -> str:
         """Useful for responding with a final answer to the user request."""
-        if scratchpad.is_empty():
-            context_str = task
-        else:
-            context_str = "\n\n".join(str(entry) for entry in scratchpad.entries)
+                
+        user_prompt = USER_PROMPT_TEMPLATE.format(request=request, context=scratchpad.entries_repr())
 
-        prompt = PROMPT_TEMPLATE.format(request=request, context=context_str)
-        schema = Result.model_json_schema()
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ]
 
-        ai_message = self.model.invoke(
-            input=[HumanMessage(content=prompt)],
-            schema=schema,
-            prop_order=prop_order_from_schema(schema),
-            prompt_ext=self.model.ai_n_beg,
+        message = self.client.complete(
+            messages, 
+            schema=Result.model_json_schema(),
+            temperature=temperature,
         )
 
-        result = json.loads(ai_message.content)
-        return result["answer"]
+        result = json.loads(message["content"])
+        answer = result["answer"]
+
+        if return_user_prompt:
+            return answer, user_prompt
+
+        return answer
