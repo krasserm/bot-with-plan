@@ -14,12 +14,12 @@ def main(args):
         bnb_4bit_compute_dtype=torch.float16
     )
 
-    tokenizer = AutoTokenizer.from_pretrained(args.checkpoint_dir)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_dir)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "left"
 
     model = AutoModelForCausalLM.from_pretrained(
-        args.checkpoint_dir,
+        args.model_dir,
         quantization_config=bnb_config,
         device_map=args.device,
     )
@@ -70,7 +70,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = jsonargparse.ArgumentParser()
-    parser.add_argument("--checkpoint_dir", type=Path, default=Path("project-1", "checkpoint-999"))
+    parser.add_argument("--model_dir", type=Path, default=Path("gba-planner-7B-v0.1"))    
     parser.add_argument("--dataset_dir", type=Path, default=Path("output", "dataset"))
     parser.add_argument("--device", type=str, default="cuda:0")
     main(parser.parse_args())

@@ -24,41 +24,58 @@ Implements a monolithic, zero-shot prompted LLM agent compatible with LangChain'
 
 ## Getting started
 
-Download and serve models for the example notebooks.
-
-### [Modular agent](example_agent_zeroshot.ipynb) example
+### [Zero-shot modular agent](example_agent_zeroshot.ipynb) example
 
 ```shell
 mkdir -p models
 
-# Download math Mistral-7B-Instruct-v0.2
-wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q8_0.gguf?download=true -O models/mistral-7b-instruct-v0.2.Q8_0.gguf
+wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q8_0.gguf?download=true \
+  -O models/mistral-7b-instruct-v0.2.Q8_0.gguf
 
-# Download math LLM CodeLlama-7B
-wget https://huggingface.co/TheBloke/CodeLlama-7B-Instruct-GGUF/resolve/main/codellama-7b-instruct.Q4_K_M.gguf?download=true -O models/codellama-7b-instruct.Q4_K_M.gguf
+wget https://huggingface.co/TheBloke/NexusRaven-V2-13B-GGUF/resolve/main/nexusraven-v2-13b.Q8_0.gguf?download=true \
+  -O models/nexusraven-v2-13b.Q8_0.gguf
 
-# Download NexusRaven-V2-13B
-wget https://huggingface.co/TheBloke/NexusRaven-V2-13B-GGUF/resolve/main/nexusraven-v2-13b.Q8_0.gguf?download=true -O models/nexusraven-v2-13b.Q8_0.gguf
-
-# optional: download fine-tuned model
-wget https://huggingface.co/krasserm/checkpoint-999/resolve/main/checkpoint-999_merged-Q8_0.gguf?download=true \
- -O models/checkpoint-999_merged-Q8_0.gguf
+wget https://huggingface.co/krasserm/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf?download=true \
+  -O models/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf
 ```
+
+```shell
+docker run --gpus all --rm -p 8081:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
+  -m /models/mistral-7b-instruct-v0.2.Q8_0.gguf -c 1024 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
+
+docker run --gpus all --rm -p 8084:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
+  -m /models/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf -c 2048 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
+
+docker run --gpus all --rm -p 8089:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
+  -m /models/nexusraven-v2-13b.Q8_0.gguf --n-gpu-layers 41 --host 0.0.0.0 --port 8080
+
+```
+
+### [Fine-tuned modular agent](example_agent_finetuned.ipynb) example
 
 
 ```shell
-docker run --gpus all --rm -p 8081:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda-052051d8ae4639a1c3c61e7da3237bcc572469d4 \
-  -m /models/mistral-7b-instruct-v0.2.Q8_0.gguf --n-gpu-layers 33 --host 0.0.0.0 --port 8080
+mkdir -p models
 
-docker run --gpus all --rm -p 8088:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda-052051d8ae4639a1c3c61e7da3237bcc572469d4 \
-  -m /models/codellama-7b-instruct.Q4_K_M.gguf --n-gpu-layers 33 --host 0.0.0.0 --port 8080
+wget https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF/resolve/main/gba-planner-7B-v0.1-Q8_0.gguf?download=true \
+  -O models/gba-planner-7B-v0.1-Q8_0.gguf
 
-docker run --gpus all --rm -p 8089:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda-052051d8ae4639a1c3c61e7da3237bcc572469d4 \
+wget https://huggingface.co/TheBloke/NexusRaven-V2-13B-GGUF/resolve/main/nexusraven-v2-13b.Q8_0.gguf?download=true \
+  -O models/nexusraven-v2-13b.Q8_0.gguf
+
+wget https://huggingface.co/krasserm/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf?download=true \
+  -O models/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf
+```
+
+```shell
+docker run --gpus all --rm -p 8082:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
+  -m /models/gba-planner-7B-v0.1-Q8_0.gguf -c 1024 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
+
+docker run --gpus all --rm -p 8084:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
+  -m /models/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf -c 2048 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
+
+docker run --gpus all --rm -p 8089:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
   -m /models/nexusraven-v2-13b.Q8_0.gguf --n-gpu-layers 41 --host 0.0.0.0 --port 8080
-
-# optional: serve fine-tuned planner model
-docker run --gpus all --rm -p 8082:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda-052051d8ae4639a1c3c61e7da3237bcc572469d4 \
-  -m /models/checkpoint-999_merged-Q8_0.gguf --n-gpu-layers 33 --host 0.0.0.0 --port 8080
 ```
 
 ### [JSON mode](example_json.ipynb) example
@@ -66,11 +83,11 @@ docker run --gpus all --rm -p 8082:8080 -v $(realpath models):/models ghcr.io/gg
 ```shell
 mkdir -p models
 
-# Download Llama-2-70B-Chat
-wget https://huggingface.co/TheBloke/Llama-2-70B-Chat-GGUF/resolve/main/llama-2-70b-chat.Q4_0.gguf?download=true -O models/llama-2-70b-chat.Q4_0.gguf
+wget https://huggingface.co/TheBloke/Llama-2-70B-Chat-GGUF/resolve/main/llama-2-70b-chat.Q4_0.gguf?download=true \
+  -O models/llama-2-70b-chat.Q4_0.gguf
 
-# Download math Mistral-7B-Instruct-v0.1
-wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q8_0.gguf?download=true -O models/mistral-7b-instruct-v0.1.Q8_0.gguf
+wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q8_0.gguf?download=true \
+  -O models/mistral-7b-instruct-v0.1.Q8_0.gguf
 ```
 
 ```shell

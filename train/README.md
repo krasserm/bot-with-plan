@@ -6,7 +6,7 @@ conda environment:
 
 ```shell  
 autotrain llm \
-  --project-name project-1 \
+  --project-name gba-planner-7B-v0.1 \
   --train \
   --model "mistralai/Mistral-7B-v0.1" \
   --data-path output/dataset \
@@ -38,36 +38,40 @@ and then evaluate the model back in the `grammar-based-agents` conda environment
 
 ```shell
 python train/planner/validate.py \
-  --checkpoint_dir project-1/checkpoint-999 \
+  --model_dir gba-planner-7B-v0.1 \
   --dataset_dir output/dataset
 ```
 
-Depending on the number of actual training steps you may need to adjust the checkpoint number. Finally, merge the 
-trained LoRA adapter back into the base model.
+Then merge the trained LoRA adapter back into the base model.
     
 ```shell
 python train/planner/merge.py \
-  --checkpoint_dir project-1/checkpoint-999 \
-  --output_dir project-1/checkpoint-999_merged
+  --model_dir gba-planner-7B-v0.1 \
+  --output_dir gba-planner-7B-v0.1-merged
 ```
 
 ## Planner model conversion and quantization
 
-Convert the fine-tuned planner model to a llama.cpp compatible format and quantizes is to 8 bit. This requires a local 
-copy of the llama.cpp repository (built with CUDA support). In the root directory of the llama.cpp repository run: 
+Convert the fine-tuned planner model into a llama.cpp compatible format and quantize it to 8 bit. This requires a local 
+copy of the llama.cpp repository (built with CUDA support). **TODO**: show how to do this with a llama.cpp Docker container.
+
+In the root directory of the llama.cpp repository run: 
 
 ```shell
-# TODO: remove hard-coded paths
+ln -s /path/to/grammar-based-agents gba
 
-python convert.py /home/martin/Development/krasserm/grammar-based-agents/project-1/checkpoint-999_merged \
-  --outfile /home/martin/Development/krasserm/grammar-based-agents/project-1/checkpoint-999_merged.gguf \
+python convert.py gba/gba-planner-7B-v0.1-merged \
+  --outfile gba/gba-planner-7B-v0.1.gguf \
   --outtype f16
 
 ./build/bin/quantize \
-  /home/martin/Development/krasserm/grammar-based-agents/project-1/checkpoint-999_merged.gguf \
-  /home/martin/Development/krasserm/grammar-based-agents/project-1/checkpoint-999_merged-Q8_0.gguf Q8_0
+  gba/gba-planner-7B-v0.1.gguf \
+  gba/gba-planner-7B-v0.1-Q8_0.gguf Q8_0
+
+./build/bin/quantize \
+  gba/gba-planner-7B-v0.1.gguf \
+  gba/gba-planner-7B-v0.1-Q4_K_M.gguf Q4_K_M
 ```
 
-The quantized model can be downloaded from [this model repo](https://huggingface.co/krasserm/checkpoint-999) and served 
-with a llama.cpp server.
-
+The quantized models can be downloaded from the [krasserm/gba-planner-7B-v0.1-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF)
+repo and served with a llama.cpp server.
