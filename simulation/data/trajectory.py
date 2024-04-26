@@ -8,8 +8,7 @@ import jsonargparse
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-from gba.client import ChatClient, LlamaCppClient, OpenAIClient
-from gba.client.chat import MistralInstruct
+from gba.client import ChatClient, LlamaCppClient, MistralInstruct, OpenAIClient
 from gba.planner import Planner, FineTunedPlanner
 from gba.utils import extract_json
 

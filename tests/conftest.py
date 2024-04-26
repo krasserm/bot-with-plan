@@ -3,8 +3,7 @@ from tempfile import TemporaryDirectory
 import pytest
 from langchain_experimental.chat_models.llm_wrapper import Llama2Chat
 
-from gba.client.chat import ChatWrapper, MistralInstruct
-from gba.client.llamacpp import LlamaCppClient
+from gba.client import ChatWrapper, LlamaCppClient, MistralInstruct
 
 
 @pytest.fixture(scope="module")

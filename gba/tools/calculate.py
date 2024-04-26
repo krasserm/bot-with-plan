@@ -1,5 +1,4 @@
-from gba.client import ChatClient
-from gba.client.chat import Llama3Instruct
+from gba.client import ChatClient, Llama3Instruct
 from gba.tools.base import Tool
 from gba.utils import exec_code, extract_code, Scratchpad
 

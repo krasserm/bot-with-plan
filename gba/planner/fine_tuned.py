@@ -68,8 +68,7 @@ class FineTunedPlanner(Planner):
 
 
 if __name__ == "__main__":
-    from gba.client.llamacpp import LlamaCppClient
-    from gba.client.chat import MistralInstruct
+    from gba.client import LlamaCppClient, MistralInstruct
 
     proxy = LlamaCppClient(url=f"http://192.168.94.60:8082/completion")
     model = MistralInstruct(llm=proxy)
