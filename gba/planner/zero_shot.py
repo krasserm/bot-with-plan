@@ -54,10 +54,17 @@ class _PlanResult(BaseModel, PlanResult):
         return self.selected_action
 
     def to_dict(self) -> Dict[str, str]:
-        return self.dict()
+        plan_dict = self.dict()
+        plan_dict["selected_tool"] = plan_dict.pop("selected_action")
+        return plan_dict
 
 
 class ZeroShotPlanner(Planner):
+
+    # ------------------------------------------------
+    #  FIXME: only tool docs are needed
+    # ------------------------------------------------
+
     def __init__(self, client: ChatClient, tools: List[Tool]):
         super().__init__(client)
         self.tools = {tool.name: tool for tool in sorted(tools, key=lambda tool: tool.name)}

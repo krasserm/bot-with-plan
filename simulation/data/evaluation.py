@@ -29,14 +29,6 @@ Answer:
 {answer}
 ```"""
 
-"""
-Your goal is to rate each step and the final answer with a score from 1 to 5 based on the following criteria:
-
-- are the task description and tool selection at a given step appropriate?
-- is the result at a given step a correct and complete answer for the task?
-- is the final answer correct and complete?
-"""
-
 
 SYSTEM_PROMPT = """Your are an expert in evaluating the steps that an agent has taken to answer a request. 
 A request can be either a question or instruction. Steps are given in the following format:
@@ -102,7 +94,7 @@ def evaluate(trajectory: Trajectory, request: str, request_id: str):
     ]
 
     message = OpenAIClient().complete(messages, enforce_json_output=True, temperature=0.0)
-    return json.loads(message["content"]), request_id
+    return json.loads(message["content"]), formatted_trajectory, request_id
 
 
 def main(args):
@@ -132,14 +124,17 @@ def main(args):
 
         for future in tqdm(as_completed(futures), total=len(futures)):
             try:
-                evaluation, request_id = future.result()
+                evaluation, formatted_trajectory, request_id = future.result()
             except Exception:
                 print(f"Failed to evaluate trajectory")
                 traceback.print_exc()
             else:
-                output_file = args.output_dir / f"{request_id}.json"
-                with output_file.open("w") as f:
+                with open(args.output_dir / f"{request_id}.json", "w") as f:
                     json.dump(evaluation, f, indent=2)
+                
+                if args.output_formatted_trajectories:
+                    with open(args.output_dir / f"{request_id}.txt", "w") as f:
+                        f.write(formatted_trajectory)
 
 
 if __name__ == "__main__":
@@ -147,6 +142,7 @@ if __name__ == "__main__":
 
     parser = jsonargparse.ArgumentParser()
     parser.add_argument("--output_dir", type=Path, default=Path("output", "evaluations"))
+    parser.add_argument("--output_formatted_trajectories", type=bool, default=False)
     parser.add_argument("--requests_dir", type=Path, default=Path("output", "requests"))
     parser.add_argument("--trajectories_dir", type=Path, default=Path("output", "trajectories"))
     parser.add_argument("--num_workers", type=int, default=20)

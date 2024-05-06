@@ -2,14 +2,14 @@ import json
 import traceback
 from concurrent.futures import as_completed, ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, Iterator, List, Tuple
+from typing import Callable, Dict, Iterator, List, Tuple
 
 import jsonargparse
 from dotenv import load_dotenv
 from tqdm import tqdm
 
 from gba.client import ChatClient, LlamaCppClient, MistralInstruct, OpenAIClient
-from gba.planner import Planner, FineTunedPlanner
+from gba.planner import Planner, FineTunedPlanner, ZeroShotPlanner
 from gba.utils import extract_json
 
 from simulation.agent import Agent
@@ -19,9 +19,9 @@ from simulation.tools import tools_dict
 Trajectory = List[Dict]
 
 
-def run_agent(planner: Planner, request: str, request_id: str, direct_answer: bool) -> Tuple[Trajectory, str]:
+def run_agent(planner_factory: Callable[[], Planner], request: str, request_id: str, direct_answer: bool) -> Tuple[Trajectory, str]:
     agent = Agent(
-        planner=planner,
+        planner=planner_factory(),
         tools=tools_dict(client=OpenAIClient()),
     )
 
@@ -53,20 +53,26 @@ def load_requests(requests_dir: Path) -> Iterator[Tuple[str, str]]:
             yield request, request_id
 
 
-def create_planner(
+def get_planner_factory(
         planner_type: str,
-        finetuned_planner_host: str,
-        finetuned_planner_port: int,
-) -> Planner:
+        planner_host: str,
+        planner_port: int,
+) -> Callable[[], Planner]:
     if planner_type == "openai":
-        return OpenAIPlanner(client=OpenAIClient())
+        return lambda: OpenAIPlanner(client=OpenAIClient())
     elif planner_type == "finetuned":
-        url = f"http://{finetuned_planner_host}:{finetuned_planner_port}/completion"
-        model = MistralInstruct(llm=LlamaCppClient(url=url, temperature=-1))
-        client = ChatClient(model=model)
-        return FineTunedPlanner(client=client)
+        return lambda: FineTunedPlanner(client=_create_client(planner_host, planner_port))
+    elif planner_type == "zeroshot":
+        tools = tools_dict(client=None).values()
+        return lambda: ZeroShotPlanner(client=_create_client(planner_host, planner_port), tools=tools)
     else:
         raise ValueError(f"Unknown planner type'{planner_type}'")
+
+
+def _create_client(planner_host: str, planner_port: int):
+    url = f"http://{planner_host}:{planner_port}/completion"
+    model = MistralInstruct(llm=LlamaCppClient(url=url, temperature=-1))
+    return ChatClient(model=model)
 
 
 def main(args):
@@ -81,18 +87,21 @@ def main(args):
             if output_file.exists():
                 continue
 
-            # requests in 0.txt must be answered directly
-            direct_answer = request_id.startswith("0_")
+            if args.direct_answer == "simple":
+                # requests in 0.txt must be answered directly
+                direct_answer = request_id.startswith("0_")
+            else:
+                direct_answer = args.direct_answer == "on"
 
-            planner = create_planner(
+            planner_factory = get_planner_factory(
                 planner_type=args.planner,
-                finetuned_planner_host=args.finetuned_planner_host,
-                finetuned_planner_port=args.finetuned_planner_port,
+                planner_host=args.planner_host,
+                planner_port=args.planner_port,
             )
 
             future = pool.submit(
                 run_agent,
-                planner=planner,
+                planner_factory=planner_factory,
                 request=request,
                 request_id=request_id,
                 direct_answer=direct_answer,
@@ -115,10 +124,11 @@ if __name__ == "__main__":
     load_dotenv()
 
     parser = jsonargparse.ArgumentParser()
-    parser.add_argument("--planner", type=str, choices=["openai", "finetuned"], default="openai")
-    parser.add_argument("--finetuned_planner_host", type=str, default="localhost")
-    parser.add_argument("--finetuned_planner_port", type=int, default=8082)
+    parser.add_argument("--planner", type=str, choices=["openai", "finetuned", "zeroshot"], default="openai")
+    parser.add_argument("--planner_host", type=str, default="localhost")
+    parser.add_argument("--planner_port", type=int, default=8082)
     parser.add_argument("--output_dir", type=Path, default=Path("output", "trajectories"))
     parser.add_argument("--requests_dir", type=Path, default=Path("output", "requests"))
-    parser.add_argument("--num_workers", type=int, default=1)
+    parser.add_argument("--direct_answer", type=str, default="off", choices=["off", "simple", "on"])
+    parser.add_argument("--num_workers", type=int, default=20)
     main(parser.parse_args())
