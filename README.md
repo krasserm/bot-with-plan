@@ -35,18 +35,18 @@ wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/
 wget https://huggingface.co/TheBloke/NexusRaven-V2-13B-GGUF/resolve/main/nexusraven-v2-13b.Q8_0.gguf?download=true \
   -O models/nexusraven-v2-13b.Q8_0.gguf
 
-wget https://huggingface.co/krasserm/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf?download=true \
-  -O models/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf
+wget https://huggingface.co/krasserm/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct-Q8_0.gguf?download=true \
+  -O models/Meta-Llama-3-8B-Instruct-Q8_0.gguf
 ```
 
 ```shell
-docker run --gpus all --rm -p 8081:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
+docker run --gpus all --rm -p 8081:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-858f6b7 \
   -m /models/mistral-7b-instruct-v0.2.Q8_0.gguf -c 1024 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
 
-docker run --gpus all --rm -p 8084:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
-  -m /models/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf -c 2048 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
+docker run --gpus all --rm -p 8084:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-858f6b7 \
+  -m /models/Meta-Llama-3-8B-Instruct-Q8_0.gguf -c 2048 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
 
-docker run --gpus all --rm -p 8089:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
+docker run --gpus all --rm -p 8089:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-858f6b7 \
   -m /models/nexusraven-v2-13b.Q8_0.gguf --n-gpu-layers 41 --host 0.0.0.0 --port 8080
 
 ```
@@ -63,18 +63,18 @@ wget https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF/resolve/main/gba-p
 wget https://huggingface.co/TheBloke/NexusRaven-V2-13B-GGUF/resolve/main/nexusraven-v2-13b.Q8_0.gguf?download=true \
   -O models/nexusraven-v2-13b.Q8_0.gguf
 
-wget https://huggingface.co/krasserm/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf?download=true \
-  -O models/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf
+wget https://huggingface.co/krasserm/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct-Q8_0.gguf?download=true \
+  -O models/Meta-Llama-3-8B-Instruct-Q8_0.gguf
 ```
 
 ```shell
-docker run --gpus all --rm -p 8082:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
+docker run --gpus all --rm -p 8082:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-858f6b7 \
   -m /models/gba-planner-7B-v0.1-Q8_0.gguf -c 1024 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
 
-docker run --gpus all --rm -p 8084:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
-  -m /models/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf -c 2048 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
+docker run --gpus all --rm -p 8084:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-858f6b7 \
+  -m /models/Meta-Llama-3-8B-Instruct-Q8_0.gguf -c 2048 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
 
-docker run --gpus all --rm -p 8089:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-3fe847b \
+docker run --gpus all --rm -p 8089:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-858f6b7 \
   -m /models/nexusraven-v2-13b.Q8_0.gguf --n-gpu-layers 41 --host 0.0.0.0 --port 8080
 ```
 

@@ -3,7 +3,11 @@ from gba.tools.base import Tool
 from gba.utils import exec_code, extract_code, Scratchpad
 
 
-SYSTEM_PROMPT = """You are a helpful coding assistant."""
+SYSTEM_PROMPT = """You are a helpful coding assistant. Always format Python code as:
+
+```python 
+{code}
+```"""
 
 USER_PROMPT_TEMPLATE = """You have access to the following context information:
 
@@ -17,9 +21,7 @@ Solve the following task with Python code using context information if needed:
 {task}
 ```
 
-Write only Python code enclosed by ```python ... ```.
 Use a variable for each required numeric value from the context.
-
 Assign the result to variable "result".
 The result must be either a number or a list of numbers.
 
