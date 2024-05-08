@@ -16,7 +16,7 @@ accelerate = "^0.30.1"
 bitsandbytes = "^0.43.1"
 chromadb = "^0.5"
 datasets = "^2.19"
-jsonargparse= "^4.28"
+jsonargparse = "^4.28"
 jsonref = "^1.1"
 langchain = "^0.1.20"
 langchain-experimental = "^0.0.58"
@@ -32,6 +32,10 @@ safetensors = "^0.4.3"
 sentence-transformers = "^2.7"
 torch = "~2.2"
 transformers = "^4.41"
+unstructured = "^0.14.2"
+sqlitedict = "^2.1.0"
+faiss-cpu = "^1.8.0"
+usearch = "^2.12.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.7"
@@ -44,3 +48,12 @@ exclude = ["gba/client/grammar.py"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]
+
+[[tool.mypy.overrides]]
+module = [
+    "requests",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+searxng_endpoint = "http://localhost:8080"

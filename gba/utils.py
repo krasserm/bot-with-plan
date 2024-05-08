@@ -1,9 +1,13 @@
 import ast
 import json
+import os
 import re
+import time
+from pathlib import Path
 from typing import List
 
 from pydantic import BaseModel
+from tqdm import tqdm
 
 
 class ScratchpadEntry(BaseModel):
@@ -124,3 +128,43 @@ def parse_function_call(call):
             args = [ast.literal_eval(arg) for arg in node.args]
             kwargs = {kw.arg: ast.literal_eval(kw.value) for kw in node.keywords}
             return args, kwargs
+
+
+class StopWatch:
+    def __enter__(self):
+        self.start = time.perf_counter()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.stop = time.perf_counter()
+
+    def elapsed(self):
+        if hasattr(self, "stop"):
+            result = self.stop - self.start
+        else:
+            result = time.perf_counter() - self.start
+
+        return result * 1000
+
+
+def split_file(file_path: Path, output_dir: Path, chunk_size: int) -> None:
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True)
+
+    with open(file_path, "rb") as input_file:
+        part_num = 0
+        while True:
+            chunk = input_file.read(chunk_size)
+            if not chunk:
+                break
+            part_num += 1
+            with open(output_dir / f"{part_num:04d}.part", "wb") as output_file:
+                output_file.write(chunk)
+
+
+def recombine_files(input_dir: Path, output_file: Path) -> None:
+    with open(output_file, "wb") as output:
+        parts = sorted(os.listdir(input_dir))
+        for part in tqdm(parts):
+            with open(input_dir / part, "rb") as input_file:
+                output.write(input_file.read())
