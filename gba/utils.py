@@ -106,9 +106,9 @@ def _remove_print_statements(code: str) -> str:
 
 def exec_code(code: str, result_variable_name: str):
     try:
-        loc_variables = {}
-        exec(code, globals(), loc_variables)
-        return loc_variables[result_variable_name]
+        global_variables = {}
+        exec(code, global_variables)
+        return global_variables[result_variable_name]
     except Exception as e:
         raise ValueError(f"code could not be executed (code='{code}')", e)
 

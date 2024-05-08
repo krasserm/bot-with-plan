@@ -58,7 +58,10 @@ class CalculateTool(Tool):
         
         print(f"```python{code}```")
 
-        result = exec_code(code, result_variable_name="result")        
+        try:
+            result = exec_code(code, result_variable_name="result")
+        except Exception as e:
+            result = f"An error occurred: {e}"
 
         if isinstance(result, list):
             result = ", ".join([self.format_number(elem) for elem in result])
