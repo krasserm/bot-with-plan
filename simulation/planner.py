@@ -1,13 +1,12 @@
 import json
-from typing import Dict
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
-from gba.client import OpenAIClient
+from gba.client import Message, OpenAIClient
 from gba.planner import Planner, PlanResult
 from gba.utils import Scratchpad
 from simulation.tools import tools_string
-
 
 SYSTEM_PROMPT = """You are given a user request and context information. You can select one of the following tools:
 
@@ -28,7 +27,7 @@ Always answer in the following JSON format:
 
 For selecting the next tool or providing a final answer, always use context information only.
 
-The generated task should be a single task. 
+The generated task should be a single task.
 Avoid combining multiple tasks in one step. If you need to perform multiple tasks, do them one after the other.
 Avoid requesting more than one piece of information in a single task. If you need multiple pieces of information request them one after the other."""
 
@@ -71,16 +70,18 @@ class OpenAIPlanner(Planner):
         super().__init__(client)
 
     def plan(
-            self,
-            request: str,
-            scratchpad: Scratchpad,
-            temperature: float = 0.1,
-            direct_answer: bool = False,
-            **kwargs,
+        self,
+        request: str,
+        scratchpad: Scratchpad,
+        history: Optional[List[Message]] = None,
+        temperature: float = 0.1,
+        direct_answer: bool = False,
+        **kwargs,
     ) -> OpenAIPlanResult:
         if direct_answer:
-            instruction = ("Provide a final answer to the user request. "
-                           "You must only use the tool final_answer, no other tool.")
+            instruction = (
+                "Provide a final answer to the user request. " "You must only use the tool final_answer, no other tool."
+            )
         else:
             instruction = "Provide the next step to answer the user request."
 

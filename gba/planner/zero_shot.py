@@ -1,12 +1,12 @@
 import json
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional
 
 from pydantic import BaseModel
 
 from gba.client import ChatClient, Message
 from gba.planner import Planner, PlanResult
-from gba.utils import Scratchpad
 from gba.tools.base import Tool
+from gba.utils import Scratchpad
 
 TOOL_DOC_TEMPLATE = """{name}: {doc}"""
 
@@ -60,22 +60,21 @@ class _PlanResult(BaseModel, PlanResult):
 
 
 class ZeroShotPlanner(Planner):
-
     # ------------------------------------------------
     #  FIXME: only tool docs are needed
     # ------------------------------------------------
 
-    def __init__(self, client: ChatClient, tools: List[Tool]):
+    def __init__(self, client: ChatClient, tools: Iterable[Tool]):
         super().__init__(client)
         self.tools = {tool.name: tool for tool in sorted(tools, key=lambda tool: tool.name)}
 
     def plan(
-            self,
-            request: str,
-            scratchpad: Scratchpad,
-            temperature: float = -1,
-            history: Optional[List[Message]] = None,
-            **kwargs,
+        self,
+        request: str,
+        scratchpad: Scratchpad,
+        history: Optional[List[Message]] = None,
+        temperature: float = -1,
+        **kwargs,
     ) -> PlanResult:
         messages = self.create_messages(request=request, scratchpad=scratchpad)
 

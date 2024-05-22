@@ -19,7 +19,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = jsonargparse.ArgumentParser()
-    parser.add_argument("--model_dir", type=Path, default=Path("gba-planner-7B-v0.1"))    
-    parser.add_argument("--output_dir", type=Path, default=Path("gba-planner-7B-v0.1-merged"))
+    parser.add_argument("--model_dir", type=Path, default=Path("gba-planner-7B"))
+    parser.add_argument("--output_dir", type=Path, default=Path("gba-planner-7B-merged"))
 
     main(parser.parse_args())

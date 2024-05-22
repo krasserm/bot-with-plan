@@ -1,11 +1,11 @@
 from pytest import fixture
 
 from gba.search import SearchEngine
-from tests.store_test import store
+from tests.store_test import store  # noqa F401
 
 
 @fixture(scope="module")
-def search_engine(mistral_instruct, store):
+def search_engine(mistral_instruct, store):  # noqa F811
     yield SearchEngine(store=store)
 
 

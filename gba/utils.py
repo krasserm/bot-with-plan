@@ -59,16 +59,16 @@ def prop_order_from_schema(schema):
 
 def _object_from_schema(schema, keys):
     """Returns a JSON object of given schema, with descriptions as values."""
-    if 'properties' in schema:
+    if "properties" in schema:
         example = {}
-        for key, value in schema['properties'].items():
+        for key, value in schema["properties"].items():
             keys.append(key)
             example[key] = _object_from_schema(value, keys=keys)
         return example
-    elif 'items' in schema:
-        return [_object_from_schema(schema['items'], keys=keys)]
-    elif 'description' in schema:
-        return schema['description']
+    elif "items" in schema:
+        return [_object_from_schema(schema["items"], keys=keys)]
+    elif "description" in schema:
+        return schema["description"]
     else:
         return None
 
@@ -95,7 +95,11 @@ def _remove_print_statements(code: str) -> str:
 
     class RemovePrints(ast.NodeTransformer):
         def visit_Expr(self, node):
-            if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id == 'print':
+            if (
+                isinstance(node.value, ast.Call)
+                and isinstance(node.value.func, ast.Name)
+                and node.value.func.id == "print"
+            ):
                 return None
             return node
 
@@ -106,7 +110,7 @@ def _remove_print_statements(code: str) -> str:
 
 def exec_code(code: str, result_variable_name: str):
     try:
-        global_variables = {}
+        global_variables = {}  # type: ignore
         exec(code, global_variables)
         return global_variables[result_variable_name]
     except Exception as e:

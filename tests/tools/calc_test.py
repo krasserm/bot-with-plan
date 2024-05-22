@@ -1,7 +1,7 @@
-from pytest import fixture
+from pytest import approx, fixture
 
-from gba.utils import Scratchpad
 from gba.tools import CalculateTool
+from gba.utils import Scratchpad
 
 
 @fixture(scope="module")
@@ -22,4 +22,4 @@ def test_calculate(calculate_tool):
         scratchpad=scratchpad,
     )
 
-    assert response == "4.57143"
+    assert float(response) == approx(4.57143)

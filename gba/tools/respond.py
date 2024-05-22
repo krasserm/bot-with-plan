@@ -27,7 +27,7 @@ Context information:
 {context}
 ```
 
-Answer the user request using the available context information only. 
+Answer the user request using the available context information only.
 The answer should be a single sentence in natural language.
 Use the following output format:
 
@@ -43,16 +43,16 @@ class RespondTool(Tool):
         self.client = ChatClient(model=model)
 
     def run(
-            self, 
-            request: str, 
-            task: str, 
-            scratchpad: Scratchpad, 
-            temperature: float = -1, 
-            return_user_prompt: bool = False, 
-            **kwargs,
+        self,
+        request: str,
+        task: str,
+        scratchpad: Scratchpad,
+        temperature: float = -1,
+        return_user_prompt: bool = False,
+        **kwargs,
     ) -> str:
         """Useful for responding with a final answer to the user request."""
-                
+
         user_prompt = USER_PROMPT_TEMPLATE.format(request=request, context=scratchpad.entries_repr())
 
         messages = [
@@ -61,7 +61,7 @@ class RespondTool(Tool):
         ]
 
         message = self.client.complete(
-            messages, 
+            messages,
             schema=Result.model_json_schema(),
             temperature=temperature,
         )
@@ -70,6 +70,6 @@ class RespondTool(Tool):
         answer = result["answer"]
 
         if return_user_prompt:
-            return answer, user_prompt
+            return answer, user_prompt  # type: ignore
 
         return answer

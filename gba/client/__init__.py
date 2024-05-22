@@ -7,5 +7,5 @@ from gba.client.chat import (
     Llama3Instruct,
     MistralInstruct,
 )
-from gba.client.openai import OpenAIClient
 from gba.client.llamacpp import LlamaCppClient
+from gba.client.openai import OpenAIClient

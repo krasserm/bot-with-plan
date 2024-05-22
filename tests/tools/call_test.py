@@ -1,7 +1,7 @@
 from pytest import fixture
 
-from gba.utils import Scratchpad
 from gba.tools.call.python import FunctionCallTool
+from gba.utils import Scratchpad
 
 
 def order_item(item: str, quantity: int) -> str:

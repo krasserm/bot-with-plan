@@ -7,7 +7,7 @@ from sentence_transformers import CrossEncoder
 class DocumentStore:
     def __init__(self, path=".chroma"):
         self.sentence_embedder = embedding_functions.SentenceTransformerEmbeddingFunction()
-        self.cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+        self.cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
         self.client = chromadb.PersistentClient(path=path)
         self.collection = self.client.get_or_create_collection(

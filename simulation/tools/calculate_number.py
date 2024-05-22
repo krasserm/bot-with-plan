@@ -1,7 +1,6 @@
 from gba.utils import Scratchpad
 from simulation.tools.base import SimulatedTool
 
-
 SYSTEM_PROMPT = """You pretend to be a calculator that outputs a single number given a task description and context information. This number may also be a date or time
 If information is missing the the task description which you could also obtain from a Python interpreter, pretend to do so. Avoid mentioning which calculation steps you have made.
 If the task description is not a numerical task that can be usually solved with a calculator you must answer that you cannot execute the task and provide a reason in a short sentence."""

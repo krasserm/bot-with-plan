@@ -11,7 +11,6 @@ from simulation.tools.search_wikipedia import SearchWikipedia
 from simulation.tools.send_email import SendEmail
 from simulation.tools.use_bash import UseBash
 
-
 TOOL_CLASSES = [
     AskUser,
     CalculateNumber,
@@ -29,4 +28,4 @@ def tools_string() -> str:
 
 
 def tools_dict(client: OpenAIClient) -> Dict[str, SimulatedTool]:
-    return {tool_class.name: tool_class(client) for tool_class in TOOL_CLASSES}
+    return {tool_class.name: tool_class(client) for tool_class in TOOL_CLASSES}  # type: ignore

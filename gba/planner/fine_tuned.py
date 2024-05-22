@@ -3,10 +3,9 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
-from gba.client import Message, ChatClient
+from gba.client import ChatClient, Message
 from gba.planner import Planner, PlanResult
 from gba.utils import Scratchpad
-
 
 PROMPT_TEMPLATE = """User request:
 
@@ -41,12 +40,12 @@ class _PlanResult(BaseModel, PlanResult):
 
 class FineTunedPlanner(Planner):
     def plan(
-            self,
-            request: str,
-            scratchpad: Scratchpad,
-            temperature: float = -1,
-            history: Optional[List[Message]] = None,
-            **kwargs,
+        self,
+        request: str,
+        scratchpad: Scratchpad,
+        history: Optional[List[Message]] = None,
+        temperature: float = -1,
+        **kwargs,
     ) -> PlanResult:
         messages = self.create_messages(request=request, scratchpad=scratchpad)
 
@@ -70,7 +69,7 @@ class FineTunedPlanner(Planner):
 if __name__ == "__main__":
     from gba.client import LlamaCppClient, MistralInstruct
 
-    proxy = LlamaCppClient(url=f"http://192.168.94.60:8082/completion")
+    proxy = LlamaCppClient(url="http://192.168.94.60:8082/completion")
     model = MistralInstruct(llm=proxy)
     client = ChatClient(model=model)
     planner = FineTunedPlanner(client=client)

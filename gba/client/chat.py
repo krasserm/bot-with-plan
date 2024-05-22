@@ -1,6 +1,6 @@
 from typing import List
 
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_experimental.chat_models.llm_wrapper import ChatWrapper
 
 from gba.client.base import Client, Message

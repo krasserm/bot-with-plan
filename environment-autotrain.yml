@@ -1,12 +1,13 @@
-name: grammar-based-agent-autotrain
+name: krasserm-gba-autotrain
 channels:
   - pytorch
-  - nvidia/label/cuda-11.8.0
+  - nvidia
 dependencies:
-  - python=3.9
-  - pytorch=2.1
-  - pytorch-cuda=11.8
+  - python=3.10
+  - pytorch=2.2
+  - pytorch-cuda=12.1
   - cuda-toolkit
   - pip
   - pip:
-    - autotrain-advanced
+    - autotrain-advanced==0.7.101
+    - deepspeed==0.14.2

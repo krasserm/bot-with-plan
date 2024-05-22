@@ -2,23 +2,22 @@ import inspect
 
 from langchain_core.language_models import LLM
 
-from gba.tools.base import Tool, TOOL_DOC_TEMPLATE
-from gba.utils import parse_function_call, Scratchpad
+from gba.tools.base import TOOL_DOC_TEMPLATE, Tool
+from gba.utils import Scratchpad, parse_function_call
 
-
-PROMPT_TEMPLATE = '''
+PROMPT_TEMPLATE = """
 Function:
 {function_spec}
 
 User query: {task}
 
-Use the following additional context information if needed:  
+Use the following additional context information if needed:
 
 ```
 {context}
 ```<human_end>
 
-'''
+"""
 
 
 SPEC_TEMPLATE = '''def {name}{signature}:
@@ -48,11 +47,7 @@ class FunctionCallTool(Tool):
         if not results_str:
             results_str = "<no context information available>"
 
-        prompt = PROMPT_TEMPLATE.format(
-            function_spec=self.spec(),
-            context=results_str,
-            task=task
-        )
+        prompt = PROMPT_TEMPLATE.format(function_spec=self.spec(), context=results_str, task=task)
 
         fn_response = self.model.invoke(prompt, stop=["<bot_end>"])
         fn_call = fn_response[6:]

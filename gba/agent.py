@@ -1,5 +1,6 @@
 from typing import List
 
+from gba.client import Message
 from gba.planner import Planner
 from gba.tools.base import Tool
 from gba.utils import Scratchpad
@@ -11,7 +12,7 @@ class Agent:
         self.tools = {tool.name: tool for tool in tools}
         self.conversational = conversational
         self.scratchpad = Scratchpad()
-        self.history = []
+        self.history: List[Message] = []
 
     def run(self, request: str) -> str:
         from gba.tools.ask import AskTool

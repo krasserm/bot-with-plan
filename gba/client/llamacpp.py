@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-import requests
+import requests  # type: ignore
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
@@ -21,16 +21,15 @@ class LlamaCppClient(LLM):
         return "llama-cpp"
 
     def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            schema: Optional[Dict[str, Any]] = None,
-            prop_order: Optional[List[str]] = (),
-            prompt_ext: Optional[str] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        schema: Optional[Dict[str, Any]] = None,
+        prop_order: Optional[List[str]] = None,
+        prompt_ext: Optional[str] = None,
+        **kwargs: Any,
     ) -> str:
-
         if prompt_ext is not None:
             prompt = prompt + prompt_ext
 
@@ -47,7 +46,7 @@ class LlamaCppClient(LLM):
         } | kwargs
 
         if schema is not None:
-            payload["grammar"] = schema_to_grammar(schema, prop_order=prop_order)
+            payload["grammar"] = schema_to_grammar(schema, prop_order=() if prop_order is None else prop_order)
 
         resp = requests.post(url=self.url, headers={"Content-Type": "application/json"}, json=payload)
         resp_json = resp.json()

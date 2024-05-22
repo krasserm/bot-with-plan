@@ -3,7 +3,7 @@ from pathlib import Path
 import jsonargparse
 import torch
 from datasets import DatasetDict
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, GenerationConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, GenerationConfig
 
 
 def main(args):
@@ -11,7 +11,7 @@ def main(args):
         load_in_4bit=True,
         bnb_4bit_use_double_quant=False,
         bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16
+        bnb_4bit_compute_dtype=torch.float16,
     )
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_dir)
@@ -31,7 +31,7 @@ def main(args):
         pad_token_id=model.config.pad_token_id,
     )
 
-    for i, example in enumerate(DatasetDict.load_from_disk(args.dataset_dir)["test"]):
+    for i, example in enumerate(DatasetDict.load_from_disk(str(args.dataset_dir))["test"]):
         # Currently requires an open curly brace at the end of the prompt otherwise
         # the model will generate an EOS token immediately. TODO: investigate ...
 
@@ -46,7 +46,7 @@ def main(args):
 
         with torch.no_grad():
             result = model.generate(input_ids, generation_config=generation_config)
-            result = result[:, input_ids.shape[1]:]
+            result = result[:, input_ids.shape[1] :]
 
         decoded = tokenizer.batch_decode(result, skip_special_tokens=True)
         decoded = ext + decoded[0]
@@ -70,7 +70,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = jsonargparse.ArgumentParser()
-    parser.add_argument("--model_dir", type=Path, default=Path("gba-planner-7B-v0.1"))    
+    parser.add_argument("--model_dir", type=Path, default=Path("gba-planner-7B"))
     parser.add_argument("--dataset_dir", type=Path, default=Path("output", "dataset"))
     parser.add_argument("--device", type=str, default="cuda:0")
     main(parser.parse_args())

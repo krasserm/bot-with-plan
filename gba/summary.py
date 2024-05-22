@@ -49,10 +49,10 @@ class ResultSummarizer:
         ]
 
         message = self.client.complete(
-            messages, 
+            messages,
             schema=Result.model_json_schema(),
             temperature=temperature,
         )
 
-        result = json.loads(message["content"])
-        return result["response"]
+        content_dict = json.loads(message["content"])
+        return content_dict["response"]

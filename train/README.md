@@ -1,12 +1,12 @@
 ## Planner fine-tuning
 
 For fine-tuning the planner module, trajectories from a GPT-4 based [agent simulation](../simulation/README.md) are
-used. To start fine-tuning on these trajectories run the following command in the `grammar-based-agents-autotrain` 
+used. To start fine-tuning on these trajectories run the following command in the `grammar-based-agents-autotrain`
 conda environment:
 
-```shell  
+```shell
 autotrain llm \
-  --project-name gba-planner-7B-v0.1 \
+  --project-name gba-planner-7B \
   --train \
   --model "mistralai/Mistral-7B-v0.1" \
   --data-path output/dataset \
@@ -38,29 +38,29 @@ and then evaluate the model back in the `grammar-based-agents` conda environment
 
 ```shell
 python train/planner/validate.py \
-  --model_dir gba-planner-7B-v0.1 \
+  --model_dir gba-planner-7B \
   --dataset_dir output/dataset
 ```
 
 Then merge the trained LoRA adapter back into the base model.
-    
+
 ```shell
 python train/planner/merge.py \
-  --model_dir gba-planner-7B-v0.1 \
-  --output_dir gba-planner-7B-v0.1-merged
+  --model_dir gba-planner-7B \
+  --output_dir gba-planner-7B-merged
 ```
 
 ## Planner model conversion and quantization
 
-Convert the fine-tuned planner model into a llama.cpp compatible format and quantize it to 8 bit. This requires a local 
+Convert the fine-tuned planner model into a llama.cpp compatible format and quantize it to 8 bit. This requires a local
 copy of the llama.cpp repository (built with CUDA support). **TODO**: show how to do this with a llama.cpp Docker container.
 
-In the root directory of the llama.cpp repository run: 
+In the root directory of the llama.cpp repository run:
 
 ```shell
 ln -s /path/to/grammar-based-agents gba
 
-python convert.py gba/gba-planner-7B-v0.1-merged \
+python convert.py gba/gba-planner-7B-merged \
   --outfile gba/gba-planner-7B-v0.1.gguf \
   --outtype f16
 

@@ -1,6 +1,6 @@
 import random
 import traceback
-from concurrent.futures import as_completed, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Set, Tuple
 
@@ -10,7 +10,6 @@ from tqdm import tqdm
 
 from gba.client import OpenAIClient
 from simulation.tools import tools_string
-
 
 SYSTEM_PROMPT_TEMPLATE = """You are a creative assistant that can generate questions or instructions related to a topic. These questions or instructions are called "requests".
 A request is a short sentence or phrase to be answered by an agent in one or more steps using a combination of the following tools, one at each step:
@@ -44,18 +43,18 @@ Tool N: final_answer, your explanation how final_answer could help the agent
 
 Finally, generate 6 very specific requests that require an increasing number of steps, from 1 to 6, to be answered.
 Avoid generating requests that explicitly instruct the agent to ask the user like "Ask me ...".
-Use the following JSON format, including triple backticks: 
+Use the following JSON format, including triple backticks:
 
 ```json
 {{
     "topic": "<chosen topic>",
     "requests": [
-      {{ 
+      {{
         "request": "<generated request>",
         "explanation": "<explain tool usage steps required for answering this request as compact as possible>"
       }},
-      {{ 
-        "request": "<generated request>", 
+      {{
+        "request": "<generated request>",
         "explanation": "<explain tool usage steps required for answering this request as compact as possible>"
       }},
       ...
@@ -167,7 +166,7 @@ def main(args):
             try:
                 content, idx = future.result()
             except Exception:
-                print(f"Failed to generate batch")
+                print("Failed to generate batch")
                 traceback.print_exc()
             else:
                 output_file = args.output_dir / f"{idx}.txt"

@@ -1,11 +1,10 @@
 from gba.client import ChatClient, Llama3Instruct
 from gba.tools.base import Tool
-from gba.utils import exec_code, extract_code, Scratchpad
-
+from gba.utils import Scratchpad, exec_code, extract_code
 
 SYSTEM_PROMPT = """You are a helpful coding assistant. Always format Python code as:
 
-```python 
+```python
 {code}
 ```"""
 
@@ -22,7 +21,7 @@ Solve the following task with Python code using context information if needed:
 ```
 
 Use a variable for each required numeric value from the context.
-Assign the result to variable "result".
+Always assign the final result to variable "result".
 The result must be either a number or a list of numbers.
 
 Let's write the code step by step."""
@@ -36,14 +35,14 @@ class CalculateTool(Tool):
         self.summarizer = summarizer
 
     def run(
-            self, 
-            request: str, 
-            task: str, 
-            scratchpad: Scratchpad, 
-            temperature: float = -1, 
-            return_user_prompt: bool = False, 
+        self,
+        request: str,
+        task: str,
+        scratchpad: Scratchpad,
+        temperature: float = -1,
+        return_user_prompt: bool = False,
         **kwargs,
-    ) -> str:    
+    ) -> str:
         """Useful for evaluating numeric expressions."""
 
         user_prompt = USER_PROMPT_TEMPLATE.format(context=scratchpad.results_repr(), task=task)
@@ -55,7 +54,7 @@ class CalculateTool(Tool):
 
         message = self.client.complete(messages, temperature=temperature)
         code = extract_code(message["content"], remove_print_statements=True)
-        
+
         print(f"```python{code}```")
 
         try:
@@ -72,7 +71,7 @@ class CalculateTool(Tool):
             result = self.summarizer.summarize(task, result, temperature=temperature)
 
         if return_user_prompt:
-            return result, user_prompt
+            return result, user_prompt  # type: ignore
 
         return result
 

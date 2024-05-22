@@ -1,7 +1,6 @@
 from gba.utils import Scratchpad
 from simulation.tools.base import SimulatedTool
 
-
 SYSTEM_PROMPT = """You are a user interacting with an agent. The agent sometimes asks questions which you have to answer.
 Your answer should be as short as possible. If possible use keywords or short phrases to answer the questions. Otherwise use a short sentence.
 When asked for personal information, provide fictional data. Avoid using newline characters in your answers."""

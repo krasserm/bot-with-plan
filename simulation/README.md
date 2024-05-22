@@ -12,7 +12,7 @@ Add your OpenAI API key to `.env`, then `export PYTHONPATH=.`
 
 ### Fine-tuning dataset
 
-#### Generate requests 
+#### Generate requests
 
 Start generating requests (random questions and instructions). First 20 requests are intended to be answered directly by the agent:
 
@@ -33,7 +33,7 @@ python simulation/data/request/multi_step.py \
 
 #### Generate trajectories
 
-Run the simulation agent on each generated request and save the trajectories:  
+Run the simulation agent on each generated request and save the trajectories:
 
 ```shell
 python simulation/data/trajectory.py \
@@ -47,7 +47,7 @@ The `--direct_answer=simple` option means that the agent is forced to answer sim
 
 #### Evaluate trajectories
 
-Evaluate the quality of generated trajectories:  
+Evaluate the quality of generated trajectories:
 
 ```shell
 python simulation/data/evaluation.py \
@@ -59,7 +59,7 @@ python simulation/data/evaluation.py \
 
 #### Package dataset
 
-Package a fine-tuning dataset for the planner module from generated trajectories that have a rating of 4 or higher:  
+Package a fine-tuning dataset for the planner module from generated trajectories that have a rating of 4 or higher:
 
 ```shell
 python simulation/data/package.py \

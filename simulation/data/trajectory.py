@@ -1,6 +1,6 @@
 import json
 import traceback
-from concurrent.futures import as_completed, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List, Tuple
 
@@ -9,9 +9,8 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 
 from gba.client import ChatClient, LlamaCppClient, MistralInstruct, OpenAIClient
-from gba.planner import Planner, FineTunedPlanner, ZeroShotPlanner
+from gba.planner import FineTunedPlanner, Planner, ZeroShotPlanner
 from gba.utils import extract_json
-
 from simulation.agent import Agent
 from simulation.planner import OpenAIPlanner
 from simulation.tools import tools_dict
@@ -19,20 +18,24 @@ from simulation.tools import tools_dict
 Trajectory = List[Dict]
 
 
-def run_agent(planner_factory: Callable[[], Planner], request: str, request_id: str, direct_answer: bool) -> Tuple[Trajectory, str]:
+def run_agent(
+    planner_factory: Callable[[], Planner], request: str, request_id: str, direct_answer: bool
+) -> Tuple[Trajectory, str]:
     agent = Agent(
         planner=planner_factory(),
         tools=tools_dict(client=OpenAIClient()),
     )
 
-    plans, scratchpad_entries = agent.run(request, direct_answer=direct_answer, verbose=True)
+    plans, scratchpad_entries = agent.run(request, direct_answer=direct_answer, verbose=False)
 
     trajectory = []
     for plan, entry in zip(plans, scratchpad_entries):
-        trajectory.append({
-            "plan": plan.to_dict(),
-            "result": entry.result,
-        })
+        trajectory.append(
+            {
+                "plan": plan.to_dict(),
+                "result": entry.result,
+            }
+        )
     return trajectory, request_id
 
 
@@ -54,16 +57,16 @@ def load_requests(requests_dir: Path) -> Iterator[Tuple[str, str]]:
 
 
 def get_planner_factory(
-        planner_type: str,
-        planner_host: str,
-        planner_port: int,
+    planner_type: str,
+    planner_host: str,
+    planner_port: int,
 ) -> Callable[[], Planner]:
     if planner_type == "openai":
         return lambda: OpenAIPlanner(client=OpenAIClient())
     elif planner_type == "finetuned":
         return lambda: FineTunedPlanner(client=_create_client(planner_host, planner_port))
     elif planner_type == "zeroshot":
-        tools = tools_dict(client=None).values()
+        tools = tools_dict(client=None).values()  # type: ignore
         return lambda: ZeroShotPlanner(client=_create_client(planner_host, planner_port), tools=tools)
     else:
         raise ValueError(f"Unknown planner type'{planner_type}'")
@@ -112,7 +115,7 @@ def main(args):
             try:
                 trajectory, request_id = future.result()
             except Exception:
-                print(f"Failed to generate trajectory")
+                print("Failed to generate trajectory")
                 traceback.print_exc()
             else:
                 output_file = args.output_dir / f"{request_id}.json"

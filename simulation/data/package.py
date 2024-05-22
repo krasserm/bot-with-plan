@@ -12,10 +12,10 @@ from simulation.data.trajectory import load_requests
 
 
 def load_data(
-        requests_dir: Path,
-        trajectories_dir: Path,
-        evaluations_dir: Path,
-        rating_threshold: int = 4,
+    requests_dir: Path,
+    trajectories_dir: Path,
+    evaluations_dir: Path,
+    rating_threshold: int = 4,
 ):
     for request, request_id in load_requests(requests_dir):
         trajectory_file = trajectories_dir / f"{request_id}.json"
@@ -82,7 +82,7 @@ def main(args):
         ),
     )
     ds = ds.map(format_example).train_test_split(test_size=args.validation_size, seed=0)
-    ds.save_to_disk(args.output_dir)
+    ds.save_to_disk(str(args.output_dir))
 
     ds = ds.remove_columns(["prompt", "target"])
     ds["train"].to_csv(args.output_dir / "train.csv")

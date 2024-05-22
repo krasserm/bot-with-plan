@@ -3,7 +3,6 @@ import random
 from gba.utils import Scratchpad
 from simulation.tools.base import SimulatedTool
 
-
 SYSTEM_PROMPT_ANSWER = """You pretend to be an internet search engine that retrieves information based on a task description and context information.
 Formulate your answer as single sentence such that it is an answer to the task description. Pretend that you have access to real-time information.
 If you don't know the answer, make a best guess. It is acceptable if the answer is incorrect.
@@ -43,13 +42,13 @@ class SearchInternet(SimulatedTool):
     name: str = "search_internet"
 
     def run(
-            self,
-            request: str,
-            task: str,
-            scratchpad: Scratchpad,
-            no_answer_prob: float = 0.1,
-            partial_answer_prob: float = 0.1,
-            **kwargs,
+        self,
+        request: str,
+        task: str,
+        scratchpad: Scratchpad,
+        no_answer_prob: float = 0.1,
+        partial_answer_prob: float = 0.1,
+        **kwargs,
     ) -> str:
         """Useful for up-to-date information on the internet."""
 

@@ -1,6 +1,6 @@
 import json
 import traceback
-from concurrent.futures import as_completed, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import jsonargparse
@@ -8,10 +8,9 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 
 from gba.client import OpenAIClient
-from simulation.data.trajectory import load_requests, Trajectory
+from simulation.data.trajectory import Trajectory, load_requests
 
-
-TRAJECTORY_TEMPLATE = """Request: 
+TRAJECTORY_TEMPLATE = """Request:
 
 ```
 {request}
@@ -30,7 +29,7 @@ Answer:
 ```"""
 
 
-SYSTEM_PROMPT = """Your are an expert in evaluating the steps that an agent has taken to answer a request. 
+SYSTEM_PROMPT = """Your are an expert in evaluating the steps that an agent has taken to answer a request.
 A request can be either a question or instruction. Steps are given in the following format:
 
 ```
@@ -72,7 +71,7 @@ def format_trajectory(trajectory: Trajectory, request: str) -> str:
         result = step["result"]
 
         if "user_request" in plan and plan["user_request"] != request:
-            print(f"Repeated request doesn't match the original request:")
+            print("Repeated request doesn't match the original request:")
             print(f"- Original request: {request}")
             print(f"- Repeated request: {plan['user_request']}")
 
@@ -126,12 +125,12 @@ def main(args):
             try:
                 evaluation, formatted_trajectory, request_id = future.result()
             except Exception:
-                print(f"Failed to evaluate trajectory")
+                print("Failed to evaluate trajectory")
                 traceback.print_exc()
             else:
                 with open(args.output_dir / f"{request_id}.json", "w") as f:
                     json.dump(evaluation, f, indent=2)
-                
+
                 if args.output_formatted_trajectories:
                     with open(args.output_dir / f"{request_id}.txt", "w") as f:
                         f.write(formatted_trajectory)

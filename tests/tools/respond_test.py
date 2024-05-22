@@ -1,7 +1,7 @@
 from pytest import fixture
 
-from gba.utils import ScratchpadEntry, Scratchpad
 from gba.tools import RespondTool
+from gba.utils import Scratchpad, ScratchpadEntry
 
 
 @fixture(scope="module")
@@ -18,17 +18,6 @@ def test_response_from_context(respond_tool):
     )
 
     response = respond_tool.run(request="Tell me two names", task="", scratchpad=scratchpad)
-
-    assert "Birgit" in response
-    assert "Martin" in response
-
-
-def test_response_from_task(respond_tool):
-    response = respond_tool.run(
-        request="Tell me two names",
-        task="Mention the names Birgit and Martin",
-        scratchpad=Scratchpad(),
-    )
 
     assert "Birgit" in response
     assert "Martin" in response

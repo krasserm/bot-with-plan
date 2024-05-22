@@ -1,7 +1,6 @@
 from gba.utils import Scratchpad
 from simulation.tools.base import SimulatedTool
 
-
 SYSTEM_PROMPT = """You are given a user request, context information and a task description. Provide an answer to the user request.
 Use task description and context information as only source of information for answering the user request."""
 

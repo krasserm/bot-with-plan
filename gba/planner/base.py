@@ -1,22 +1,19 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
-from gba.utils import Scratchpad
 from gba.client import Client, Message
+from gba.utils import Scratchpad
 
 
 class PlanResult(ABC):
     @abstractmethod
-    def get_task(self) -> str:
-        ...
+    def get_task(self) -> str: ...
 
     @abstractmethod
-    def get_selected_tool(self) -> str:
-        ...
+    def get_selected_tool(self) -> str: ...
 
     @abstractmethod
-    def to_dict(self) -> Dict[str, str]:
-        ...
+    def to_dict(self) -> Dict[str, str]: ...
 
 
 class Planner(ABC):
@@ -25,10 +22,9 @@ class Planner(ABC):
 
     @abstractmethod
     def plan(
-            self,
-            request: str,
-            scratchpad: Scratchpad,
-            history: Optional[List[Message]] = None,
-            **kwargs,
-    ) -> PlanResult:
-        ...
+        self,
+        request: str,
+        scratchpad: Scratchpad,
+        history: Optional[List[Message]] = None,
+        **kwargs,
+    ) -> PlanResult: ...

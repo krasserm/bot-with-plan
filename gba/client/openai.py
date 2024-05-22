@@ -7,10 +7,10 @@ from gba.client.base import Client, Message
 
 class OpenAIClient(Client):
     def __init__(
-            self,
-            model: str = "gpt-4-turbo-preview",
-            api_key: Optional[str] = None,
-            organization: Optional[str] = None,
+        self,
+        model: str = "gpt-4-turbo",
+        api_key: Optional[str] = None,
+        organization: Optional[str] = None,
     ):
         self.client = OpenAI(api_key=api_key, organization=organization)
         self.model = model

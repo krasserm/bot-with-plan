@@ -1,7 +1,6 @@
 from gba.utils import Scratchpad, extract_code
 from simulation.tools.base import SimulatedTool
 
-
 SYSTEM_PROMPT = """You pretend to execute commands in a Linux bash given a task description and context information.
 You only need to provide the execution result as answer surrounded by triple backticks. Avoid mentioning which commands you have executed.
 If the task description is not a usual task being executed in a bash, or if the task description and context doesn't provide enough information you must answer that you cannot execute the task and provide a reason in a short sentence."""

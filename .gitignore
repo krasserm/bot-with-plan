@@ -1,5 +1,10 @@
 .chroma
+.data
 .ipynb_checkpoints
+.mypy_cache
+.pytest_cache
+.ruff_cache
 gba-planner*
 models
 output*
+searxng

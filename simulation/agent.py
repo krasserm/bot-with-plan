@@ -3,7 +3,7 @@ from typing import Dict, List, Tuple
 
 from gba.planner import Planner, PlanResult
 from gba.utils import Scratchpad, ScratchpadEntry
-from simulation.tools import SearchInternet, SearchWikipedia, SimulatedTool, FinalAnswer
+from simulation.tools import FinalAnswer, SearchInternet, SearchWikipedia, SimulatedTool
 
 
 class Agent:
@@ -12,11 +12,11 @@ class Agent:
         self.tools = tools
 
     def run(
-            self,
-            request: str,
-            max_steps: int = 10,
-            verbose: bool = True,
-            **planner_kwargs,
+        self,
+        request: str,
+        max_steps: int = 10,
+        verbose: bool = True,
+        **planner_kwargs,
     ) -> Tuple[List[PlanResult], List[ScratchpadEntry]]:
         scratchpad = Scratchpad()
         plans = []

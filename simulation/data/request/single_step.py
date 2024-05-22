@@ -5,13 +5,12 @@ from dotenv import load_dotenv
 
 from gba.client import OpenAIClient
 
-
 SYSTEM_PROMPT = """You are a creative assistant that can generate questions or instructions on a variety of topics. These questions or instructions are called "requests".
 A request is a short sentence or phrase that can be answered with basic common knowledge in 1 or 2 sentences."""
 
 
-USER_PROMPT_TEMPLATE = """Generate {num} very specific and simple requests. Be creative when choosing a topic for each request. 
-Half of the requests should be questions and the other half should be instructions. 
+USER_PROMPT_TEMPLATE = """Generate {num} very specific and simple requests. Be creative when choosing a topic for each request.
+Half of the requests should be questions and the other half should be instructions.
 The assistant that will answer these requests can only generate text, no drawings, sounds, ... etc.
 
 Use the following JSON format:

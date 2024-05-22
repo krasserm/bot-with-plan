@@ -3,7 +3,6 @@ import random
 from gba.utils import Scratchpad
 from simulation.tools.base import SimulatedTool
 
-
 SYSTEM_PROMPT_ANSWER = """You pretend to be wikipedia and support users to retrieve information based on a task description and context information.
 Formulate your answer as single sentence such that it is an answer to the task description.
 
@@ -39,13 +38,13 @@ class SearchWikipedia(SimulatedTool):
     name: str = "search_wikipedia"
 
     def run(
-            self,
-            request: str,
-            task: str,
-            scratchpad: Scratchpad,
-            no_answer_prob: float = 0.1,
-            partial_answer_prob: float = 0.1,
-            **kwargs,
+        self,
+        request: str,
+        task: str,
+        scratchpad: Scratchpad,
+        no_answer_prob: float = 0.1,
+        partial_answer_prob: float = 0.1,
+        **kwargs,
     ) -> str:
         """Useful for searching factual information in Wikipedia."""
 
