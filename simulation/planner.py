@@ -5,8 +5,8 @@ from pydantic import BaseModel
 
 from gba.client import Message, OpenAIClient
 from gba.planner import Planner, PlanResult
+from gba.tools import ToolsSpec
 from gba.utils import Scratchpad
-from simulation.tools import tools_string
 
 SYSTEM_PROMPT = """You are given a user request and context information. You can select one of the following tools:
 
@@ -66,8 +66,9 @@ class OpenAIPlanResult(BaseModel, PlanResult):
 
 
 class OpenAIPlanner(Planner):
-    def __init__(self, client: OpenAIClient):
+    def __init__(self, client: OpenAIClient, tools_spec: ToolsSpec):
         super().__init__(client)
+        self.tools_spec = tools_spec
 
     def plan(
         self,
@@ -85,7 +86,7 @@ class OpenAIPlanner(Planner):
         else:
             instruction = "Provide the next step to answer the user request."
 
-        system_prompt = SYSTEM_PROMPT.format(tools=tools_string())
+        system_prompt = SYSTEM_PROMPT.format(tools=self.tools_spec.tools_repr())
         user_prompt = USER_PROMPT.format(request=request, context=scratchpad.entries_repr(), instruction=instruction)
 
         messages = [

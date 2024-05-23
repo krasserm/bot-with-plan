@@ -2,7 +2,7 @@ import inspect
 
 from langchain_core.language_models import LLM
 
-from gba.tools.base import TOOL_DOC_TEMPLATE, Tool
+from gba.tools.base import Tool
 from gba.utils import Scratchpad, parse_function_call
 
 PROMPT_TEMPLATE = """
@@ -34,20 +34,12 @@ class FunctionCallTool(Tool):
     def name(self) -> str:
         return self.fn.__name__
 
-    def doc(self):
-        return TOOL_DOC_TEMPLATE.format(name=self.name, doc=self.fn.__doc__)
-
-    def spec(self):
-        return SPEC_TEMPLATE.format(name=self.name, signature=inspect.signature(self.fn), doc=self.fn.__doc__)
+    @property
+    def doc(self) -> str:
+        return self.fn.__doc__
 
     def run(self, request: str, task: str, scratchpad: Scratchpad, **kwargs) -> str:
-        results = [se.result for se in scratchpad.entries]
-        results_str = "\n".join(results)
-
-        if not results_str:
-            results_str = "<no context information available>"
-
-        prompt = PROMPT_TEMPLATE.format(function_spec=self.spec(), context=results_str, task=task)
+        prompt = PROMPT_TEMPLATE.format(function_spec=self._fn_spec(), context=scratchpad.results_repr(), task=task)
 
         fn_response = self.model.invoke(prompt, stop=["<bot_end>"])
         fn_call = fn_response[6:]
@@ -64,3 +56,6 @@ class FunctionCallTool(Tool):
             return self.summarizer.summarize(task, result)
         else:
             return result
+
+    def _fn_spec(self):
+        return SPEC_TEMPLATE.format(name=self.name, signature=inspect.signature(self.fn), doc=self.fn.__doc__)

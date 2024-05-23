@@ -2,30 +2,24 @@ import json
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Callable, Dict, Iterator, List, Tuple
+from typing import Dict, Iterator, List, Tuple
 
 import jsonargparse
 from dotenv import load_dotenv
 from tqdm import tqdm
 
 from gba.client import ChatClient, LlamaCppClient, MistralInstruct, OpenAIClient
-from gba.planner import FineTunedPlanner, Planner, ZeroShotPlanner
+from gba.planner import FineTunedPlanner, ZeroShotPlanner
+from gba.tools import ToolsSpec
 from gba.utils import extract_json
 from simulation.agent import Agent
 from simulation.planner import OpenAIPlanner
-from simulation.tools import tools_dict
+from simulation.tools import tools as create_tools
 
 Trajectory = List[Dict]
 
 
-def run_agent(
-    planner_factory: Callable[[], Planner], request: str, request_id: str, direct_answer: bool
-) -> Tuple[Trajectory, str]:
-    agent = Agent(
-        planner=planner_factory(),
-        tools=tools_dict(client=OpenAIClient()),
-    )
-
+def run_agent(agent: Agent, request: str, request_id: str, direct_answer: bool) -> Tuple[Trajectory, str]:
     plans, scratchpad_entries = agent.run(request, direct_answer=direct_answer, verbose=False)
 
     trajectory = []
@@ -56,23 +50,7 @@ def load_requests(requests_dir: Path) -> Iterator[Tuple[str, str]]:
             yield request, request_id
 
 
-def get_planner_factory(
-    planner_type: str,
-    planner_host: str,
-    planner_port: int,
-) -> Callable[[], Planner]:
-    if planner_type == "openai":
-        return lambda: OpenAIPlanner(client=OpenAIClient())
-    elif planner_type == "finetuned":
-        return lambda: FineTunedPlanner(client=_create_client(planner_host, planner_port))
-    elif planner_type == "zeroshot":
-        tools = tools_dict(client=None).values()  # type: ignore
-        return lambda: ZeroShotPlanner(client=_create_client(planner_host, planner_port), tools=tools)
-    else:
-        raise ValueError(f"Unknown planner type'{planner_type}'")
-
-
-def _create_client(planner_host: str, planner_port: int):
+def create_client(planner_host: str, planner_port: int):
     url = f"http://{planner_host}:{planner_port}/completion"
     model = MistralInstruct(llm=LlamaCppClient(url=url, temperature=-1))
     return ChatClient(model=model)
@@ -96,15 +74,25 @@ def main(args):
             else:
                 direct_answer = args.direct_answer == "on"
 
-            planner_factory = get_planner_factory(
-                planner_type=args.planner,
-                planner_host=args.planner_host,
-                planner_port=args.planner_port,
-            )
+            client = OpenAIClient()
+            tools = create_tools(client=client)
+            tools_spec = ToolsSpec(tools=tools)
+
+            if args.planner == "openai":
+                planner = OpenAIPlanner(client=client, tools_spec=tools_spec)
+            elif args.planner == "finetuned":
+                planner = FineTunedPlanner(client=create_client(args.planner_host, args.planner_port))
+            elif args.planner == "zeroshot":
+                planner = ZeroShotPlanner(
+                    client=create_client(args.planner_host, args.planner_port),
+                    tools_spec=tools_spec,
+                )
+            else:
+                raise ValueError(f"Unknown planner type'{args.planner}'")
 
             future = pool.submit(
                 run_agent,
-                planner_factory=planner_factory,
+                agent=Agent(planner=planner, tools=tools),
                 request=request,
                 request_id=request_id,
                 direct_answer=direct_answer,

@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 
 from gba.client import OpenAIClient
-from simulation.tools import tools_string
+from gba.tools import ToolsSpec
+from simulation.tools import tools as create_tools
 
 SYSTEM_PROMPT_TEMPLATE = """You are a creative assistant that can generate questions or instructions related to a topic. These questions or instructions are called "requests".
 A request is a short sentence or phrase to be answered by an agent in one or more steps using a combination of the following tools, one at each step:
@@ -117,14 +118,17 @@ EXAMPLES = [
 ]
 
 
-def create_messages(category: str):
+def create_messages(category: str, tools_spec: ToolsSpec):
     examples = EXAMPLES.copy()
     random.shuffle(examples)
     examples.append("...")
     examples_str = "\n".join([f"- {example}" for example in examples])
 
     return [
-        {"role": "system", "content": SYSTEM_PROMPT_TEMPLATE.format(examples=examples_str, tools=tools_string())},
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT_TEMPLATE.format(examples=examples_str, tools=tools_spec.tools_repr()),
+        },
         {"role": "user", "content": USER_PROMPT_TEMPLATE.format(category=category)},
     ]
 
@@ -135,7 +139,9 @@ def choose_category():
 
 
 def generate_request_batch(category: str, idx: int) -> Tuple[str, int]:
-    message = OpenAIClient().complete(create_messages(category=category))
+    client = OpenAIClient()
+    tools = create_tools(client)
+    message = client.complete(create_messages(category=category, tools_spec=ToolsSpec(tools)))
     return message["content"], idx
 
 

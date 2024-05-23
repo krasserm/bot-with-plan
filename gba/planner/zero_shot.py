@@ -1,14 +1,12 @@
 import json
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
 from gba.client import ChatClient, Message
 from gba.planner import Planner, PlanResult
-from gba.tools.base import Tool
+from gba.tools.base import ToolsSpec
 from gba.utils import Scratchpad
-
-TOOL_DOC_TEMPLATE = """{name}: {doc}"""
 
 
 PROMPT_TEMPLATE = """You are given a user request and context information. You can select one of the following actions:
@@ -60,13 +58,9 @@ class _PlanResult(BaseModel, PlanResult):
 
 
 class ZeroShotPlanner(Planner):
-    # ------------------------------------------------
-    #  FIXME: only tool docs are needed
-    # ------------------------------------------------
-
-    def __init__(self, client: ChatClient, tools: Iterable[Tool]):
+    def __init__(self, client: ChatClient, tools_spec: ToolsSpec):
         super().__init__(client)
-        self.tools = {tool.name: tool for tool in sorted(tools, key=lambda tool: tool.name)}
+        self.tools_spec = tools_spec.sorted()
 
     def plan(
         self,
@@ -90,12 +84,9 @@ class ZeroShotPlanner(Planner):
         return _PlanResult(**message_json)
 
     def create_messages(self, request: str, scratchpad: Scratchpad) -> List[Message]:
-        action_docs = "\n".join([f"- {tool.doc()}" for tool in self.tools.values()])
-        action_names = ", ".join(self.tools.keys())
-
         prompt = PROMPT_TEMPLATE.format(
-            action_docs=action_docs,
-            action_names=action_names,
+            action_docs=self.tools_spec.tools_repr(),
+            action_names=self.tools_spec.names_repr(),
             request=request,
             context=scratchpad.entries_repr(),
         )

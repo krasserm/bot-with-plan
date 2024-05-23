@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 from gba.planner import Planner, PlanResult
 from gba.utils import Scratchpad, ScratchpadEntry
@@ -7,9 +7,9 @@ from simulation.tools import FinalAnswer, SearchInternet, SearchWikipedia, Simul
 
 
 class Agent:
-    def __init__(self, planner: Planner, tools: Dict[str, SimulatedTool]):
+    def __init__(self, planner: Planner, tools: List[SimulatedTool]):
         self.planner = planner
-        self.tools = tools
+        self.tools = {tool.name: tool for tool in tools}
 
     def run(
         self,

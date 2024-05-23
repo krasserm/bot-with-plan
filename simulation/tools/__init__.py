@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import List
 
 from gba.client import OpenAIClient
 from simulation.tools.ask_user import AskUser
@@ -23,9 +23,5 @@ TOOL_CLASSES = [
 ]
 
 
-def tools_string() -> str:
-    return "\n".join([f"- {tool_class.doc()}" for tool_class in TOOL_CLASSES])
-
-
-def tools_dict(client: OpenAIClient) -> Dict[str, SimulatedTool]:
-    return {tool_class.name: tool_class(client) for tool_class in TOOL_CLASSES}  # type: ignore
+def tools(client: OpenAIClient) -> List[SimulatedTool]:
+    return [tool_class(client) for tool_class in TOOL_CLASSES]  # type: ignore

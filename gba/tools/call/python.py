@@ -3,7 +3,7 @@ import inspect
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_experimental.chat_models.llm_wrapper import ChatWrapper
 
-from gba.tools.base import TOOL_DOC_TEMPLATE, Tool
+from gba.tools.base import Tool
 from gba.utils import Scratchpad, exec_code, extract_code
 
 SYSTEM_PROMPT = """Provide answers in Python wrapped into ```."""
@@ -46,11 +46,9 @@ class FunctionCallTool(Tool):
     def name(self) -> str:
         return self.fn.__name__
 
-    def doc(self):
-        return TOOL_DOC_TEMPLATE.format(name=self.name, doc=self.fn.__doc__)
-
-    def spec(self):
-        return SPEC_TEMPLATE.format(name=self.name, signature=inspect.signature(self.fn), doc=self.fn.__doc__)
+    @property
+    def doc(self) -> str:
+        return self.fn.__doc__
 
     def run(self, request: str, task: str, scratchpad: Scratchpad, **kwargs) -> str:
         results = [se.result for se in scratchpad.entries]
@@ -62,7 +60,7 @@ class FunctionCallTool(Tool):
         messages = [
             SystemMessage(content=SYSTEM_PROMPT),
             HumanMessage(
-                content=USER_PROMPT_TEMPLATE.format(function_spec=self.spec(), context=results_str, task=task)
+                content=USER_PROMPT_TEMPLATE.format(function_spec=self._fn_spec(), context=results_str, task=task)
             ),
         ]
 
@@ -78,3 +76,6 @@ class FunctionCallTool(Tool):
             return self.summarizer.summarize(task, result)
         else:
             return result
+
+    def _fn_spec(self):
+        return SPEC_TEMPLATE.format(name=self.name, signature=inspect.signature(self.fn), doc=self.fn.__doc__)
