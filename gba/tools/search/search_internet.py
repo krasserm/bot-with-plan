@@ -9,11 +9,10 @@ from typing import List, Tuple
 
 import numpy as np
 import requests
-from langchain_core.messages import SystemMessage, HumanMessage
 from sentence_transformers import CrossEncoder
 from unstructured.partition.html import partition_html
 
-from gba.client import Llama3Instruct
+from gba.client import Llama3Instruct, ChatClient
 from gba.tools import Tool
 from gba.tools.search.extract import ContentExtractor
 from gba.tools.search.query import QueryRewriter
@@ -50,7 +49,7 @@ class SearchInternetTool(Tool):
 
     def __init__(
         self,
-        llm_model: Llama3Instruct,
+        llm: Llama3Instruct,
         rerank_model: CrossEncoder,
         searxng_endpoint: str,
         top_k_documents: int = 3,
@@ -65,7 +64,7 @@ class SearchInternetTool(Tool):
     ):
         """Search the internet for information.
 
-        :param llm_model: The LLM model to use for generating responses.
+        :param llm: The LLM model to use for generating responses.
         :param rerank_model: The reranker model to use for reranking document nodes.
         :param searxng_endpoint: The endpoint of the searxng service.
         :param top_k_documents: The number of top documents to consider for node extraction.
@@ -78,7 +77,7 @@ class SearchInternetTool(Tool):
         :param max_concurrent_requests: The maximum number of concurrent requests.
         :param extractor: The content extractor to use for extracting relevant information.
         """
-        self._llm_model = llm_model
+        self._llm_client = ChatClient(llm)
         self._reranker = rerank_model
         self._searxng_endpoint = searxng_endpoint.strip("/")
         self._top_k_documents = top_k_documents
@@ -89,10 +88,10 @@ class SearchInternetTool(Tool):
         self._fetch_webpage_multiplier = fetch_webpage_multiplier
         self._fetch_webpage_timeout = fetch_webpage_timeout
         self._extractor = extractor
-        self._query_rewriter = QueryRewriter(model=llm_model)
+        self._query_rewriter = QueryRewriter(llm=llm)
         self._query_pool = ThreadPoolExecutor(max_workers=max_concurrent_requests)
         self._synthesise_query_pattern = re.compile(
-            r"^(search (for|to))|(search the internet (for|to))|(search wikipedia (for|to))\s", re.IGNORECASE
+            r"^(search (for|to))|(search the internet (for|to))\s", re.IGNORECASE
         )
 
     def run(
@@ -100,9 +99,10 @@ class SearchInternetTool(Tool):
         request: str,
         task: str,
         scratchpad: Scratchpad,
+        temperature: float = -1,
         **kwargs,
     ) -> str:
-        """Useful for up-to-date information on the internet."""
+        """Useful for searching up-to-date information on the internet."""
 
         search_query = self._query_rewriter.rewrite(task)
         synthesise_response_query = self._synthesise_query_pattern.sub("", task.strip())
@@ -142,7 +142,7 @@ class SearchInternetTool(Tool):
         if not documents:
             return "No information found"
 
-        return self._synthesise_response(synthesise_response_query, documents)
+        return self._synthesise_response(synthesise_response_query, documents, temperature)
 
     def _search_internet(self, query: str) -> List[dict]:
         q = f"!go !ddg !qw {query}"  # use google, duckduckgo, and qwant search engines for better stability of search results
@@ -299,7 +299,7 @@ class SearchInternetTool(Tool):
             if document.strip() != "no information"
         ]
 
-    def _synthesise_response(self, query: str, documents: List[Tuple[str, str]]) -> str:
+    def _synthesise_response(self, query: str, documents: List[Tuple[str, str]], temperature: float) -> str:
         context = "\n".join([f"{title} - {text}" for title, text in documents])
         message = QA_USER_PROMPT_TEMPLATE.format(
             context_str=context,
@@ -309,11 +309,10 @@ class SearchInternetTool(Tool):
         logger.info("Prompt:")
         logger.info(message)
 
-        response = self._llm_model.invoke(
-            input=[
-                SystemMessage(content=QA_SYSTEM_PROMPT),
-                HumanMessage(content=message),
-            ],
-            prompt_ext=self._llm_model.ai_n_beg,
-        )
-        return response.content
+        messages = [
+            {"role": "system", "content": QA_SYSTEM_PROMPT},
+            {"role": "user", "content": message},
+        ]
+
+        response = self._llm_client.complete(messages, temperature=temperature)
+        return response["content"]

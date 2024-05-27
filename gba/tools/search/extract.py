@@ -1,9 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
-from langchain_core.messages import SystemMessage, HumanMessage
-
-from gba.client import Llama3Instruct
+from gba.client import Llama3Instruct, ChatClient
 
 EXTRACTOR_CONTEXT_SYSTEM_PROMPT = "You are a helpful assistant that extracts content relevant to a given query only based on the provided context. You omit the existence of the context in your answers."
 
@@ -23,17 +21,17 @@ Query: {query_str}
 
 class ContentExtractor:
     def __init__(self, model: Llama3Instruct, max_workers: int = 10):
-        self._llm = model
+        self._client = ChatClient(model)
         self._pool = ThreadPoolExecutor(max_workers=max_workers)
 
-    def extract(self, query: str, documents: List[str]):
+    def extract(self, query: str, documents: List[str], temperature: float = -1) -> List[str]:
         messages = [
             EXTRACTOR_CONTEXT_USER_PROMPT_TEMPLATE.format(context_str=doc, query_str=query) for doc in documents
         ]
 
         fts = []
         for message in messages:
-            fts.append(self._pool.submit(self._extract_blocking, message))
+            fts.append(self._pool.submit(self._extract_blocking, message, temperature))
 
         results = []
         for ft in fts:
@@ -41,12 +39,11 @@ class ContentExtractor:
 
         return results
 
-    def _extract_blocking(self, message):
-        response = self._llm.invoke(
-            input=[
-                SystemMessage(content=EXTRACTOR_CONTEXT_SYSTEM_PROMPT),
-                HumanMessage(content=message),
-            ],
-            prompt_ext=self._llm.ai_n_beg,
-        )
-        return response.content.replace("\n", " ").strip()
+    def _extract_blocking(self, message, temperature):
+        messages = [
+            {"role": "system", "content": EXTRACTOR_CONTEXT_SYSTEM_PROMPT},
+            {"role": "user", "content": message},
+        ]
+
+        response = self._client.complete(messages, temperature=temperature)
+        return response["content"].replace("\n", " ").strip()

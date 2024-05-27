@@ -7,7 +7,7 @@ from gba.utils import Scratchpad
 @pytest.fixture(scope="module")
 def search_internet_tool(searxng_endpoint, llama3, rerank_model):
     yield SearchInternetTool(
-        llm_model=llama3,
+        llm=llama3,
         rerank_model=rerank_model,
         searxng_endpoint=searxng_endpoint,
         fetch_webpage_timeout=5.0,

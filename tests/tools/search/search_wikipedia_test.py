@@ -7,7 +7,7 @@ from gba.utils import Scratchpad
 @pytest.fixture(scope="module")
 def search_wikipedia_tool(llama3, embedding_model, rerank_model):
     yield SearchWikipediaTool(
-        llm_model=llama3,
+        llm=llama3,
         embedding_model=embedding_model,
         rerank_model=rerank_model,
         top_k_nodes=10,

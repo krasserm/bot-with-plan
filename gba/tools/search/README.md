@@ -55,19 +55,19 @@ llm_model = Llama3Instruct(llm=LlamaCppClient(url="http://localhost:8084/complet
 rerank_model = CrossEncoder("mixedbread-ai/mxbai-rerank-large-v1", device="cuda")
 
 search_internet = SearchInternetTool(
-    llm_model=llm_model,
-    rerank_model=rerank_model,
-    searxng_endpoint="http://localhost:8080",
-    top_k_documents=3,
-    top_k_nodes_per_document=5,
-    top_k_snippets=None,
-    extractor=ContentExtractor(model=llm_model),
+   llm=llm_model,
+   rerank_model=rerank_model,
+   searxng_endpoint="http://localhost:8080",
+   top_k_documents=3,
+   top_k_nodes_per_document=5,
+   top_k_snippets=None,
+   extractor=ContentExtractor(model=llm_model),
 )
 
 response = search_internet.run(
-    task="When was the video game 'The Last of Us' released",
-    request="",
-    scratchpad=Scratchpad(),
+   task="When was the video game 'The Last of Us' released",
+   request="",
+   scratchpad=Scratchpad(),
 )
 ```
 
@@ -127,18 +127,68 @@ embedding_model = SentenceTransformer("mixedbread-ai/mxbai-embed-large-v1", devi
 rerank_model = CrossEncoder("mixedbread-ai/mxbai-rerank-large-v1", device="cuda")
 
 search_wikipedia = SearchWikipediaTool(
-    llm_model=llm_model,
-    embedding_model=embedding_model,
-    rerank_model=rerank_model,
-    top_k_nodes=10,
-    top_k_related_documents=1,
-    top_k_related_nodes=3,
-    extractor=ContentExtractor(model=llm_model),
+   llm=llm_model,
+   embedding_model=embedding_model,
+   rerank_model=rerank_model,
+   top_k_nodes=10,
+   top_k_related_documents=1,
+   top_k_related_nodes=3,
+   extractor=ContentExtractor(model=llm_model),
 )
 
 response = search_wikipedia.run(
-    task="Search Wikipedia for the launch date of the first iPhone.",
-    request="",
-    scratchpad=Scratchpad(),
+   task="Search Wikipedia for the launch date of the first iPhone.",
+   request="",
+   scratchpad=Scratchpad(),
 )
+```
+
+
+### Search tool dataset and index creation
+
+_Note: the following steps are optional as the [SearchWikipediaTool](../tools/search/search_wikipedia.py) uses the pre-built dataset and index files from Hugging Face by default._
+
+#### Dataset creation
+
+To create the dataset containing the `binary` and `int8` embeddings of the Wikipedia articles the following script can be used.
+
+_Note: This step is optional. You can use the pre-built dataset from [krasserm/wikipedia-2023-11-en-embed-mxbai-int8-binary](https://huggingface.co/datasets/krasserm/wikipedia-2023-11-en-embed-mxbai-int8-binary) instead._
+
+This script downloads the [Cohere/wikipedia-2023-11-embed-multilingual-v3-int8-binary](https://huggingface.co/datasets/Cohere/wikipedia-2023-11-embed-multilingual-v3-int8-binary) dataset
+and creates a new dataset containing the `binary` and `int8` embeddings of the English Wikipedia articles using the [mixedbread-ai/mxbai-embed-large-v1](https://huggingface.co/mixedbread-ai/mxbai-embed-large-v1) embedding model.
+The new dataset contains the following columns:
+* `_id`: unique identifier of the Wikipedia text chunk
+* `title`: title of the Wikipedia article
+* `url`: URL of the Wikipedia article
+* `text`: text node of the Wikipedia article
+* `emb_ubinary`: `binary` embeddings of the Wikipedia text node
+* `emb_int8`: `int8` embeddings of the Wikipedia text node
+
+```shell
+python gba/tools/search/create_wikipedia_dataset.py \
+  --output_dir=output/wikipedia-2023-11-en
+```
+
+#### Index creation
+
+To manually create the index files required for the [SearchWikipediaTool](../tools/search/search_wikipedia.py), the following script
+can be used.
+
+_Note: This step is optional as the tool uses the pre-built dataset and index files from [krasserm/wikipedia-2023-11-en-index](https://huggingface.co/datasets/krasserm/wikipedia-2023-11-en-index/tree/main) by default._
+
+The script uses the [krasserm/wikipedia-2023-11-en-embed-mxbai-int8-binary](https://huggingface.co/datasets/krasserm/wikipedia-2023-11-en-embed-mxbai-int8-binary) Wikipedia dataset containing
+the `binary` and `int8` embeddings of the Wikipedia articles. These embeddings were created using the [mixedbread-ai/mxbai-embed-large-v1](https://huggingface.co/mixedbread-ai/mxbai-embed-large-v1) embedding model.
+
+The script downloads the dataset and creates the index files required for
+the [SearchWikipediaTool](../tools/search/search_wikipedia.py):
+* `faiss-ubinary.index`: [Faiss](https://github.com/facebookresearch/faiss) index file containing the `binary`
+  embeddings
+* `usearch-int8.index`: [usearch](https://github.com/unum-cloud/usearch) index file containing the `int8` embeddings
+* `document-url-mappings.sqlite`: [SQLite](https://www.sqlite.org/) database file containing mappings from document URLs
+  to text node indices
+* `wikipedia-en-text`: Wikipedia text-only dataset
+
+```shell
+python gba/tools/search/create_wikipedia_search_index.py \
+  --output_dir=output/wikipedia_search_tool
 ```

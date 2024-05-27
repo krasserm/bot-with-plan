@@ -8,13 +8,12 @@ import faiss
 import numpy as np
 from datasets import load_dataset
 from huggingface_hub import hf_hub_download, cached_assets_path
-from langchain_core.messages import SystemMessage, HumanMessage
 from sentence_transformers import SentenceTransformer, CrossEncoder
 from sentence_transformers.quantization import quantize_embeddings
 from sqlitedict import SqliteDict
 from usearch.index import Index
 
-from gba.client import Llama3Instruct
+from gba.client import Llama3Instruct, ChatClient
 from gba.tools import Tool
 from gba.tools.search.extract import ContentExtractor
 from gba.tools.search.query import QueryRewriter
@@ -47,7 +46,7 @@ class SearchWikipediaTool(Tool):
 
     def __init__(
         self,
-        llm_model: Llama3Instruct,
+        llm: Llama3Instruct,
         embedding_model: SentenceTransformer,
         rerank_model: CrossEncoder,
         top_k_nodes: int = 10,
@@ -60,7 +59,7 @@ class SearchWikipediaTool(Tool):
     ):
         """Search Wikipedia for information.
 
-        :param llm_model: The LLM model to use for generating responses.
+        :param llm: The LLM model to use for generating responses.
         :param embedding_model: SentenceTransformer model used for similarity search.
         :param rerank_model: The reranker model to use for reranking document nodes.
         :param top_k_nodes: Number of top nodes to use in response generation.
@@ -77,10 +76,10 @@ class SearchWikipediaTool(Tool):
         self._similarity_search_top_k_nodes = similarity_search_top_k_nodes
         self._similarity_search_rescore_multiplier = similarity_search_rescore_multiplier
 
-        self._llm_model = llm_model
+        self._llm_client = ChatClient(llm)
         self._embedding_model = embedding_model
         self._reranker = rerank_model
-        self._query_rewriter = QueryRewriter(model=self._llm_model)
+        self._query_rewriter = QueryRewriter(llm=llm)
         self._extractor = extractor
 
         self._synthesise_query_pattern = re.compile(r"^(search (for|to))|(search wikipedia (for|to))\s", re.IGNORECASE)
@@ -144,6 +143,7 @@ class SearchWikipediaTool(Tool):
         request: str,
         task: str,
         scratchpad: Scratchpad,
+        temperature: float = -1,
         **kwargs,
     ) -> str:
         """Useful for searching factual information in Wikipedia."""
@@ -196,7 +196,7 @@ class SearchWikipediaTool(Tool):
         if not documents:
             return "No information found"
 
-        return self._synthesise_response(synthesise_response_query, documents)
+        return self._synthesise_response(synthesise_response_query, documents, temperature)
 
     def _search(self, query: str, top_k: int, rescore_multiplier: int):
         query_embedding = self._embedding_model.encode(
@@ -306,7 +306,7 @@ class SearchWikipediaTool(Tool):
             if document.strip() != "no information"
         ]
 
-    def _synthesise_response(self, query: str, documents: List[Tuple[str, str]]):
+    def _synthesise_response(self, query: str, documents: List[Tuple[str, str]], temperature: float) -> str:
         context = "\n".join([f"{title} - {text}" for title, text in documents])
         message = QA_USER_PROMPT_TEMPLATE.format(
             context_str=context,
@@ -316,11 +316,10 @@ class SearchWikipediaTool(Tool):
         logger.info("Prompt:")
         logger.info(message)
 
-        response = self._llm_model.invoke(
-            input=[
-                SystemMessage(content=QA_SYSTEM_PROMPT),
-                HumanMessage(content=message),
-            ],
-            prompt_ext=self._llm_model.ai_n_beg,
-        )
-        return response.content
+        messages = [
+            {"role": "system", "content": QA_SYSTEM_PROMPT},
+            {"role": "user", "content": message},
+        ]
+
+        response = self._llm_client.complete(messages, temperature=temperature)
+        return response["content"]

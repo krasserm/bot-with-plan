@@ -1,6 +1,4 @@
-from langchain_core.messages import SystemMessage, HumanMessage
-
-from gba.client import Llama3Instruct
+from gba.client import Llama3Instruct, ChatClient
 
 REWRITE_QUERY_SYSTEM_PROMPT = "You are a helpful assistant that converts a task description into a search query in natural language for performing a web search."
 
@@ -19,17 +17,16 @@ Task: {task}
 
 
 class QueryRewriter:
-    def __init__(self, model: Llama3Instruct):
-        self._model = model
+    def __init__(self, llm: Llama3Instruct):
+        self._client = ChatClient(llm)
 
-    def rewrite(self, task: str):
+    def rewrite(self, task: str, temperature: float = -1) -> str:
         message = REWRITE_QUERY_USER_PROMPT_TEMPLATE.format(task=task)
 
-        response = self._model.invoke(
-            input=[
-                SystemMessage(content=REWRITE_QUERY_SYSTEM_PROMPT),
-                HumanMessage(content=message),
-            ],
-            prompt_ext=self._model.ai_n_beg,
-        )
-        return response.content.strip('"')
+        messages = [
+            {"role": "system", "content": REWRITE_QUERY_SYSTEM_PROMPT},
+            {"role": "user", "content": message},
+        ]
+
+        response = self._client.complete(messages, temperature=temperature)
+        return response["content"].strip('"')

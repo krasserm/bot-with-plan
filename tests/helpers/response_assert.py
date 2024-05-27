@@ -1,8 +1,6 @@
 import json
 
-from langchain_core.messages import SystemMessage, HumanMessage
-
-from gba.client import Llama3Instruct
+from gba.client import Llama3Instruct, ChatClient
 
 ASSERT_SYSTEM_PROMPT = "You are a helpful assistant that validates if two answers are conceptually similar."
 
@@ -25,18 +23,20 @@ Are the responses conceptually similar or dissimilar? Only output the final resu
 class ResponseAsserter:
     def __init__(self, llm: Llama3Instruct):
         self._llm = llm
+        self._client = ChatClient(llm)
 
     def responses_similar(self, question: str, actual: str, expected: str) -> bool:
-        response = self._llm.invoke(
-            input=[
-                SystemMessage(content=ASSERT_SYSTEM_PROMPT),
-                HumanMessage(
-                    content=ASSERT_USER_PROMPT_TEMPLATE.format(question=question, expected=expected, actual=actual)
-                ),
-            ],
-            prompt_ext=self._llm.ai_n_beg,
-        )
-        text_response = response.content.strip()
+        messages = [
+            {"role": "system", "content": ASSERT_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": ASSERT_USER_PROMPT_TEMPLATE.format(question=question, expected=expected, actual=actual),
+            },
+        ]
+
+        response = self._client.complete(messages, temperature=-1)
+        text_response = response["content"].strip()
+
         try:
             json_response = json.loads(text_response)
             if "similar" in json_response:
