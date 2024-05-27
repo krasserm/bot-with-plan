@@ -24,20 +24,20 @@ logger = logging.getLogger(__name__)
 
 ARTIFACT_REPO_ID = "krasserm/wikipedia-2023-11-en-index"
 
-QA_SYSTEM_PROMPT = "You are a question answering assistant that answers questions only based on the provided context. You omit the existence of the context in your answers."
+QA_SYSTEM_PROMPT = "You are a question answering assistant that answers questions only based on the provided context from Wikipedia articles. You omit the existence of the context in your answers."
 
-QA_USER_PROMPT_TEMPLATE = """Context information is below. Each line is a separate document about a specific topic or person.
+QA_USER_PROMPT_TEMPLATE = """Context information is below. Each line is a separate document from Wikipedia about a specific topic or person.
 ---------------------
 {context_str}
 ---------------------
-Given the context information and not prior knowledge precisely answer the query.
+Given the context information and not prior knowledge precisely solve the given task.
 
 Use only information from the context.
-To use information from the context related to a person ensure that the person's firstname and lastname in the context matches exactly the person's firstname and lastname in the query.
-The answer should be a single sentence and contain the relevant information from the context to answer the query.
+To use information from the context related to a person ensure that the person's firstname and lastname in the context matches exactly the person's firstname and lastname in the task.
+The answer should be a single sentence and contain the relevant information from the context to solve the task.
 If the context does not provide the information that is requested say "No information found".
 
-Query: "{query_str}"
+Task: "{task_str}"
 """
 
 
@@ -82,7 +82,7 @@ class SearchWikipediaTool(Tool):
         self._query_rewriter = QueryRewriter(llm=llm)
         self._extractor = extractor
 
-        self._synthesise_query_pattern = re.compile(r"^(search (for|to))|(search wikipedia (for|to))\s", re.IGNORECASE)
+        self._extractor_query_pattern = re.compile(r"^(search (for|to))|(search wikipedia (for|to))\s", re.IGNORECASE)
 
         self._int8_index_view = self._load_int8_index(cache_dir=cache_dir)
         self._document_mapping = self._load_document_mapping(cache_dir=cache_dir)
@@ -149,7 +149,6 @@ class SearchWikipediaTool(Tool):
         """Useful for searching factual information in Wikipedia."""
 
         search_query = self._query_rewriter.rewrite(task)
-        synthesise_response_query = self._synthesise_query_pattern.sub("", task.strip())
 
         logger.warning("Searching wikipedia for query '%s'", search_query)
 
@@ -186,7 +185,7 @@ class SearchWikipediaTool(Tool):
         if self._extractor is not None:
             documents = self._extract_relevant_document_information(
                 extractor=self._extractor,
-                query=synthesise_response_query,
+                query=self._extractor_query_pattern.sub("", task.strip()),
                 titles=context_titles,
                 documents=context_documents,
             )
@@ -196,7 +195,7 @@ class SearchWikipediaTool(Tool):
         if not documents:
             return "No information found"
 
-        return self._synthesise_response(synthesise_response_query, documents, temperature)
+        return self._synthesise_response(task.strip(), documents, temperature)
 
     def _search(self, query: str, top_k: int, rescore_multiplier: int):
         query_embedding = self._embedding_model.encode(
@@ -306,11 +305,11 @@ class SearchWikipediaTool(Tool):
             if document.strip() != "no information"
         ]
 
-    def _synthesise_response(self, query: str, documents: List[Tuple[str, str]], temperature: float) -> str:
+    def _synthesise_response(self, task: str, documents: List[Tuple[str, str]], temperature: float) -> str:
         context = "\n".join([f"{title} - {text}" for title, text in documents])
         message = QA_USER_PROMPT_TEMPLATE.format(
             context_str=context,
-            query_str=query,
+            task_str=task,
         )
 
         logger.info("Prompt:")

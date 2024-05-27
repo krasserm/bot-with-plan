@@ -5,10 +5,10 @@ This package contains search tools for internet and Wikipedia searches.
 ## Search internet tool
 
 The [SearchInternetTool](search_internet.py) is a RAG-based search tool that performs internet searches across multiple search engines
-and synthesizes responses using a large language model (LLM).
+and synthesizes concise responses using a large language model (LLM).
 
-The tool does not require any API keys as it utilizes a local [SearXNG](https://github.com/searxng/searxng) meta search instance to query various search engines.
-Results from the search engines are fetched from the internet, ranked by relevance and passed to the LLM to generate a concise response.
+The tool does not require API keys as it utilizes a local [SearXNG](https://github.com/searxng/searxng) meta search instance to query various search engines.
+Results from the search engines are retrieved from the internet, filtered and ranked by relevance and finally passed to the LLM to generate a concise response.
 
 For a more detailed explanation of the implementation details refer to the section [search internet tool implementation](#search-internet-tool-implementation).
 
@@ -55,9 +55,10 @@ The complete list of parameters can be found in the [SearchInternetTool](search_
 
 ## Search Wikipedia tool
 
-The [SearchWikipediaTool](../tools/search/search_wikipedia.py) is a RAG-based search tool designed for efficient searches in a local Wikipedia dataset.
-The tool utilizes locally stored, quantized search indices for memory and runtime-efficient nearest neighbor search within the dataset.
-Given a search query the tool retrieves the most relevant text nodes from Wikipedia articles and synthesizes responses using a large language model (LLM).
+The [SearchWikipediaTool](../tools/search/search_wikipedia.py) is a RAG-based search tool designed for efficient search in a local Wikipedia dataset.
+
+The tool utilizes multiple locally stored, quantized search indices for memory and runtime-efficient nearest neighbor searches in the dataset.
+Given a search query, the tool retrieves the most relevant text nodes from Wikipedia articles and synthesizes responses using a large language model (LLM).
 
 _Note: the dataset has a knowledge cutoff of November 2023._
 
