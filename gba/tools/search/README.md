@@ -1,13 +1,98 @@
 # Search tools
 
-This package contains Retrieval-Augmented Generation (RAG) search tools, that retrieve information from the internet and Wikipedia using a large language model (LLM).
-
-* Internet Search: the [SearchInternetTool](search_internet.py) performs multi-engine internet searches, selects and processes top results, and uses an LLM to generate a concise response.
-* Wikipedia Search: the [SearchWikipediaTool](search_wikipedia.py) searches a static Wikipedia dataset for relevant Wikipedia articles and synthesizes responses using a large language model (LLM).
+This package contains search tools for internet and Wikipedia searches.
 
 ## Search internet tool
 
-The [SearchInternetTool](search_internet.py) performs internet searches across multiple search engines and generates concise responses using a large language model (LLM).
+The [SearchInternetTool](search_internet.py) is a RAG-based search tool that performs internet searches across multiple search engines
+and synthesizes responses using a large language model (LLM).
+
+The tool does not require any API keys as it utilizes a local [SearXNG](https://github.com/searxng/searxng) meta search instance to query various search engines.
+Results from the search engines are fetched from the internet, ranked by relevance and passed to the LLM to generate a concise response.
+
+For a more detailed explanation of the implementation details refer to the section [search internet tool implementation](#search-internet-tool-implementation).
+
+To use the [SearchInternetTool](search_internet.py) you need to set up a local [SearXNG](https://github.com/searxng/searxng) instance and provide the endpoint URL to the tool.
+
+### Setup
+
+1. Setup a local SearXNG instance using the official docker container by following the instructions outlined the [SearXNG docs](https://docs.searxng.org/admin/installation-docker.html#searxng-searxng).
+2. Start the docker container.
+3. Locate the `settings.yml` file created by the container in the volume mount directory and enable `json` mode by modifying the `search.formats` section as follows:
+   ```yaml
+   search:
+     formats:
+     - html
+     - json
+   ```
+4. Restart the docker container.
+
+### Usage
+
+```python
+from gba.tools.search import create_search_internet_tool
+from gba.utils import Scratchpad
+
+search_internet = create_search_internet_tool(
+    llama3_endpoint="http://localhost:8084/completion",
+    searxng_endpoint="http://localhost:8080",
+)
+
+response = search_internet.run(
+    task="When was the video game 'The Last of Us' released",
+    request="",
+    scratchpad=Scratchpad(),
+)
+```
+
+### Parameters
+
+* `top_k_documents`: number of top-k webpages to select from the search results (default: `3`)
+* `top_k_nodes_per_document`: number of top-k relevant text nodes to select from each webpage for generating the response (default: `5`)
+* `top_k_snippets`: number of top-k webpage snippets to include (default: `top_k_documents`)
+
+The complete list of parameters can be found in the [SearchInternetTool](search_internet.py) class.
+
+## Search Wikipedia tool
+
+The [SearchWikipediaTool](../tools/search/search_wikipedia.py) is a RAG-based search tool designed for efficient searches in a local Wikipedia dataset.
+The tool utilizes locally stored, quantized search indices for memory and runtime-efficient nearest neighbor search within the dataset.
+Given a search query the tool retrieves the most relevant text nodes from Wikipedia articles and synthesizes responses using a large language model (LLM).
+
+_Note: the dataset has a knowledge cutoff of November 2023._
+
+For a more detailed explanation of the implementation details refer to the section [search wikipedia tool implementation](#search-wikipedia-tool-implementation).
+
+### Usage
+
+```python
+from gba.tools.search import create_search_wikipedia_tool
+from gba.utils import Scratchpad
+
+search_wikipedia = create_search_wikipedia_tool(
+   llama3_endpoint="http://localhost:8084/completion",
+)
+
+response = search_wikipedia.run(
+   task="Search Wikipedia for the launch date of the first iPhone.",
+   request="",
+   scratchpad=Scratchpad(),
+)
+```
+
+### Parameters
+
+* `top_k_nodes`: number of top-k text nodes to select from the initial search results (default: `10`)
+* `top_k_related_documents`: number of top-k related documents to select from the initial search results (default: `1`)
+* `top_k_related_nodes`: number of top-k text nodes to select from the related documents (default: `3`)
+
+The complete list of parameters can be found in the [SearchWikipediaTool](search_wikipedia.py) class.
+
+## Implementation details
+
+### Search internet tool implementation
+
+The [SearchInternetTool](search_internet.py) is a RAG-based search tool that performs internet searches across multiple search engines and generates responses using a large language model (LLM).
 
 The tool leverages the [SearXNG](https://github.com/searxng/searxng) meta search engine to query multiple search engines simultaneously.
 Each search result includes the URL, webpage title, and webpage snippet.
@@ -28,50 +113,7 @@ These snippets are not summarized as they are considered to be already concise.
 
 In the last step the tool passes the summarized documents (and optional snippets) to an LLM to generate a concise response.
 
-### Usage
-
-#### SearXNG
-
-1. Set up a local SearXNG instance using the official docker container by following the [instructions in the SearXNG docs](https://docs.searxng.org/admin/installation-docker.html#searxng-searxng).
-2. Start the docker container
-3. Locate the `settings.yml` file created by the container in the volume mount directory and enable `json` mode by modifying the `search.formats` section as follows:
-   ```yaml
-   search:
-     formats:
-     - html
-     - json
-   ```
-4. Restart the docker container.
-
-```python
-from sentence_transformers import CrossEncoder
-from gba.tools.search import SearchInternetTool
-from gba.tools.search import ContentExtractor
-from gba.client import Llama3Instruct, LlamaCppClient
-from gba.utils import Scratchpad
-
-llm_model = Llama3Instruct(llm=LlamaCppClient(url="http://localhost:8084/completion", temperature=-1))
-
-rerank_model = CrossEncoder("mixedbread-ai/mxbai-rerank-large-v1", device="cuda")
-
-search_internet = SearchInternetTool(
-   llm=llm_model,
-   rerank_model=rerank_model,
-   searxng_endpoint="http://localhost:8080",
-   top_k_documents=3,
-   top_k_nodes_per_document=5,
-   top_k_snippets=None,
-   extractor=ContentExtractor(model=llm_model),
-)
-
-response = search_internet.run(
-   task="When was the video game 'The Last of Us' released",
-   request="",
-   scratchpad=Scratchpad(),
-)
-```
-
-## Search Wikipedia tool
+### Search Wikipedia tool implementation
 
 The [SearchWikipediaTool](search_wikipedia.py) searches a static Wikipedia dataset with a knowledge cutoff of November 2023, identifying relevant articles and synthesizing responses using a large language model (LLM).
 
@@ -86,7 +128,7 @@ The `binary` embeddings create an in-memory binary [Faiss](https://github.com/fa
 This index is small (~4GB in memory) and fast but may not return the most accurate results.
 
 To improve the accuracy of the search, the `int8` embeddings are used to create a memory-mapped [usearch](https://github.com/unum-cloud/usearch) index for a second stage,
-where the results of stage 1 are rescored using the query embedding and the respective `int8` embeddings, yielding the final `top_k` results.
+where the results of stage 1 are re-scored using the query embedding and the respective `int8` embeddings, yielding the final `top_k` results.
 
 Search settings are adjustable using the `similarity_search_top_k_nodes` (default: `100`) and `similarity_search_rescore_multiplier` (default: `4`) parameters.
 
@@ -111,40 +153,7 @@ The top-k documents usually contain the relevant information from the search que
 All resulting text nodes are then grouped and concatenated by document and each resulting document is summarized by the LLM.
 Finally, the summarized documents are passed to the LLM to generate a concise response.
 
-### Usage
-
-```python
-from sentence_transformers import CrossEncoder, SentenceTransformer
-from gba.tools.search import SearchWikipediaTool
-from gba.tools.search import ContentExtractor
-from gba.client import Llama3Instruct, LlamaCppClient
-from gba.utils import Scratchpad
-
-llm_model = Llama3Instruct(llm=LlamaCppClient(url="http://localhost:8084/completion", temperature=-1))
-
-embedding_model = SentenceTransformer("mixedbread-ai/mxbai-embed-large-v1", device="cuda")
-
-rerank_model = CrossEncoder("mixedbread-ai/mxbai-rerank-large-v1", device="cuda")
-
-search_wikipedia = SearchWikipediaTool(
-   llm=llm_model,
-   embedding_model=embedding_model,
-   rerank_model=rerank_model,
-   top_k_nodes=10,
-   top_k_related_documents=1,
-   top_k_related_nodes=3,
-   extractor=ContentExtractor(model=llm_model),
-)
-
-response = search_wikipedia.run(
-   task="Search Wikipedia for the launch date of the first iPhone.",
-   request="",
-   scratchpad=Scratchpad(),
-)
-```
-
-
-### Search tool dataset and index creation
+### Search Wikipedia dataset and index creation
 
 _Note: the following steps are optional as the [SearchWikipediaTool](../tools/search/search_wikipedia.py) uses the pre-built dataset and index files from Hugging Face by default._
 
