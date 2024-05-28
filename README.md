@@ -78,6 +78,23 @@ docker run --gpus all --rm -p 8089:8080 -v $(realpath models):/models ghcr.io/gg
   -m /models/nexusraven-v2-13b.Q8_0.gguf --n-gpu-layers 41 --host 0.0.0.0 --port 8080
 ```
 
+### Search tools
+
+Detailed information about the search tools can be found in the [search tools README](gba/tools/search/README.md).
+
+#### Internet search
+
+1. Set up a local SearXNG instance using the official docker container by following the [instructions in the SearXNG docs](https://docs.searxng.org/admin/installation-docker.html#searxng-searxng).
+2. Start the docker container
+3. Locate the `settings.yml` file created by the container in the volume mount directory and enable `json` mode by modifying the `search.formats` section as follows:
+   ```yaml
+   search:
+     formats:
+     - html
+     - json
+   ```
+4. Restart the docker container.
+
 ### [JSON mode](example_json.ipynb) example
 
 ```shell
