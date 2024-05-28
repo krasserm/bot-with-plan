@@ -27,8 +27,9 @@ Context information:
 {context}
 ```
 
-Answer the user request using the available context information only and not prior knowledge.
+Answer the user request using the available context information only.
 The answer should be a single sentence in natural language containing all relevant information to answer the user request.
+Do not mention the existence of that context in your answer.
 Use the following output format:
 
 {{

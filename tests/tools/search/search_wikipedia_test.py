@@ -1,19 +1,18 @@
 import pytest
 
-from gba.tools.search import SearchWikipediaTool, ContentExtractor
+from gba.tools.search import SearchWikipediaTool
 from gba.utils import Scratchpad
 
 
 @pytest.fixture(scope="module")
-def search_wikipedia_tool(llama3, embedding_model, rerank_model):
+def search_wikipedia_tool(llama3_instruct, embedding_model, rerank_model):
     yield SearchWikipediaTool(
-        llm=llama3,
+        llm=llama3_instruct,
         embedding_model=embedding_model,
         rerank_model=rerank_model,
         top_k_nodes=10,
         top_k_related_documents=1,
         top_k_related_nodes=3,
-        extractor=ContentExtractor(model=llama3),
     )
 
 

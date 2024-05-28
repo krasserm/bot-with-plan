@@ -1,7 +1,6 @@
 from tempfile import TemporaryDirectory
 
 import pytest
-from langchain_experimental.chat_models.llm_wrapper import Llama2Chat
 from sentence_transformers import SentenceTransformer, CrossEncoder
 
 from gba.client import LlamaCppClient, MistralInstruct, Llama3Instruct
@@ -10,6 +9,8 @@ from tests.helpers.response_assert import ResponseAsserter
 
 def pytest_addoption(parser):
     parser.addini("searxng_endpoint", "")
+    parser.addini("mistral_instruct_endpoint", "")
+    parser.addini("llama3_instruct_endpoint", "")
 
 
 @pytest.fixture(scope="session")
@@ -24,18 +25,13 @@ def temp_dir():
 
 
 @pytest.fixture(scope="session")
-def mistral_instruct():
-    yield MistralInstruct(llm=LlamaCppClient(url="http://localhost:8081/completion", temperature=-1))
+def llama3_instruct(request):
+    yield Llama3Instruct(llm=LlamaCppClient(url=request.config.getini("llama3_instruct_endpoint"), temperature=-1))
 
 
 @pytest.fixture(scope="session")
-def code_llama():
-    yield Llama2Chat(llm=LlamaCppClient(url="http://localhost:8088/completion", temperature=-1))
-
-
-@pytest.fixture(scope="session")
-def llama3():
-    yield Llama3Instruct(llm=LlamaCppClient(url="http://localhost:8084/completion", temperature=-1))
+def mistral_instruct(request):
+    yield MistralInstruct(llm=LlamaCppClient(url=request.config.getini("mistral_instruct_endpoint"), temperature=-1))
 
 
 @pytest.fixture(scope="session")
@@ -49,5 +45,5 @@ def rerank_model():
 
 
 @pytest.fixture(scope="session")
-def response_asserter(llama3):
-    yield ResponseAsserter(llama3)
+def response_asserter(llama3_instruct):
+    yield ResponseAsserter(llama3_instruct)

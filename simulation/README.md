@@ -1,16 +1,18 @@
 ## Agent simulation
 
-A GPT-4 based agent simulation is used for creating a [fine-tuning dataset](#fine-tuning-dataset) for the agent's planner module. The simulation environment consists of a predefined set of simluated tools backed by GPT-4. For example, the [search_internet](tools/search_internet.py) tool pretends to be an internet search engine that generates answers by making a best guess. See package [tools](tools) for all tools of the simulation environment.
+Uses a GPT-4 based planner to generate agent trajectories in a simulation environment. The environment consists of a predefined set of simluated tools backed by GPT-4. For example, the [search_internet](tools/search_internet.py) tool pretends to be an internet search engine that generates answers by making a best guess. See package [tools](tools) for all tools available in the simulation environment.
 
-The [GPT-4 based planner](planner.py), used for driving dataset generation, is a ReAct-style planner that interacts with these tools. The generated trajectories of tool interactions are then converted to a fine-tuning dataset for training smaller, open-source LLMs to mimic the behavior of the GPT-4 based planner. See [planner fine-tuning](../train/README.md) for further details on how to fine-tune a planner module.
+The [GPT-4 based planner](planner.py), used for driving [dataset generation](#dataset-generation), is a ReAct-style planner that interacts with these tools. The generated trajectories of tool interactions are then converted to a fine-tuning dataset for training smaller, open-source LLMs to mimic the behavior of the GPT-4 based planner. See [planner fine-tuning](../train/README.md) for further details on fine-tuning a planner module with the generated dataset.
 
 Fine-tuned planners can also be [evaluated](#planner-evaluation) in the simulation environment. By replacing the GPT-4 based planner with a fine-tuned planner, the agent simulation can be used to evaluate the performance of the fine-tuned planner. It can also be used for evaluating an open-source zero-shot planner that has not been fine-tuned on any simulation data.
 
 ### Setup
 
-Add your OpenAI API key to `.env`, then `export PYTHONPATH=.`
+Add your OpenAI API key to [.env][../.env], then run `export PYTHONPATH=.`
 
-### Fine-tuning dataset
+### Dataset generation
+
+This section describes generation of a planner fine-tuning dataset in a simulation environment. You can also download the complete output of the following commands from [here](https://martin-krasser.com/gba/gba-output.zip).
 
 #### Generate requests
 
@@ -22,7 +24,7 @@ python simulation/data/request/single_step.py \
   --num_requests=20
 ```
 
-The next 460 batches of 6 requests each are intended to be answered by the agent in multiple steps:
+The next 460 batches of 6 requests each are intended to be answered by the agent in multiple steps. Each batch is on a random topic:
 
 ```shell
 python simulation/data/request/multi_step.py \
@@ -33,7 +35,7 @@ python simulation/data/request/multi_step.py \
 
 #### Generate trajectories
 
-Run the simulation agent on each generated request and save the trajectories:
+Run the agent simulation on each generated request and save the trajectories:
 
 ```shell
 python simulation/data/trajectory.py \
@@ -43,11 +45,11 @@ python simulation/data/trajectory.py \
   --num_workers=20
 ```
 
-The `--direct_answer=simple` option means that the agent is forced to answer simple requests directly. These are the 20 single-step requests generated previously.
+The `--direct_answer=simple` option forces the agent answer simple requests directly. These are the 20 single-step requests generated previously. All other requests are answered in multiple steps.
 
 #### Evaluate trajectories
 
-Evaluate the quality of generated trajectories:
+Evaluate the quality of generated trajectories with GPT-4. Generates ratings from 1 (poor) to 5 (excellent):
 
 ```shell
 python simulation/data/evaluation.py \
@@ -73,7 +75,7 @@ python simulation/data/package.py \
 
 ### Planner evaluation
 
-Evaluation is done on a separate, smaller dataset consisting of 20 simple and 30 more complex requests. They can be created with:
+Instead of running planner evaluatiion yourself, you can also download the complete output of the following commands from [here](https://martin-krasser.com/gba/gba-output-eval.zip). Evaluation is done on a separate, smaller dataset consisting of 20 simple and 30 more complex requests. They can be created with:
 
 ```shell
 python simulation/data/request/single_step.py \
@@ -89,10 +91,10 @@ python simulation/data/request/multi_step.py \
 Evaluated are the following planners:
 
 - the GPT-4 based teacher planner used in the previous section but without constraining it to generate direct answers for single-step requests
-- a Mistral-7B based fine-tuned planner
+- a Mistral-7B based fine-tuned student planner
 - a Mistral-7B-Instruct based zero-shot planner
 
-Since the simulated `search_internet` and `search_wikipedia` tools are configured to return no answer with a probability of `0.1` or only a partial answer with a probability of `0.1`, four evaluation runs are repeated for each planner. The the statistics over these runs reported in [evaluate.ipynb](../evaluate.ipynb).
+Since the simulated `search_internet` and `search_wikipedia` tools are configured to return no answer with a probability of `0.1` or only a partial answer with a probability of `0.1`, four evaluation runs are repeated for each planner.
 
 #### GPT-4 based planner
 
@@ -158,3 +160,5 @@ do
     --num_workers=5
 done
 ```
+
+The statistics over these runs are calculated and summarized in [planner_evaluation.ipynb](../planner_evaluation.ipynb).

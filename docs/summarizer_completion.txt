@@ -1,3 +1,0 @@
-{
-  "answer": "Vittoria Ceretti is 25 years old."
-}

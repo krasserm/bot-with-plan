@@ -1,6 +1,0 @@
-{
-  "context_information_summary": "Leonardo DiCaprio's current girlfriend is Italian model Vittoria Ceretti.",
-  "thoughts": "First, I need to find out Vittoria Ceretti's age. Then, I will calculate her age raised to the power of 0.7.",
-  "task": "Search the internet for information about Vittoria Ceretti's age.",
-  "selected_action": "search_internet"
-}

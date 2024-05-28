@@ -46,6 +46,23 @@ class Scratchpad(BaseModel):
             return "\n".join([se.result for se in self.entries])
 
 
+class StopWatch:
+    def __enter__(self):
+        self.start = time.perf_counter()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.stop = time.perf_counter()
+
+    def elapsed(self):
+        if hasattr(self, "stop"):
+            result = self.stop - self.start
+        else:
+            result = time.perf_counter() - self.start
+
+        return result * 1000
+
+
 def object_from_schema(schema, return_keys=False):
     keys = []
     obj = _object_from_schema(schema, keys)
@@ -128,23 +145,6 @@ def parse_function_call(call):
             args = [ast.literal_eval(arg) for arg in node.args]
             kwargs = {kw.arg: ast.literal_eval(kw.value) for kw in node.keywords}
             return args, kwargs
-
-
-class StopWatch:
-    def __enter__(self):
-        self.start = time.perf_counter()
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.stop = time.perf_counter()
-
-    def elapsed(self):
-        if hasattr(self, "stop"):
-            result = self.stop - self.start
-        else:
-            result = time.perf_counter() - self.start
-
-        return result * 1000
 
 
 def split_file(file_path: Path, output_dir: Path, chunk_size: int) -> None:

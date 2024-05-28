@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
-from gba.client import ChatClient, Message
+from gba.client import Message
 from gba.planner import Planner, PlanResult
 from gba.utils import Scratchpad
 
@@ -64,22 +64,3 @@ class FineTunedPlanner(Planner):
     def create_messages(request: str, scratchpad: Scratchpad) -> List[Message]:
         prompt = PROMPT_TEMPLATE.format(request=request, context=scratchpad.entries_repr())
         return [{"role": "user", "content": prompt}]
-
-
-if __name__ == "__main__":
-    from gba.client import LlamaCppClient, MistralInstruct
-
-    proxy = LlamaCppClient(url="http://192.168.94.60:8082/completion")
-    model = MistralInstruct(llm=proxy)
-    client = ChatClient(model=model)
-    planner = FineTunedPlanner(client=client)
-
-    request = "what is Leo DiCaprio's current girlfriend's age raised to the 0.24 power?"
-    scratchpad = Scratchpad()
-    scratchpad.add(
-        task="Find out Leo DiCaprio's current girlfriend and her age using search_wikipedia or search_internet.",
-        result="Camila Morrone",
-    )
-
-    result = planner.plan(request, scratchpad)
-    print(json.dumps(result.to_dict(), indent=2))

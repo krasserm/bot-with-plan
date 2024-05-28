@@ -38,10 +38,10 @@ class FunctionCallTool(Tool):
     def doc(self) -> str:
         return self.fn.__doc__
 
-    def run(self, request: str, task: str, scratchpad: Scratchpad, **kwargs) -> str:
+    def run(self, request: str, task: str, scratchpad: Scratchpad, temperature: float = -1, **kwargs) -> str:
         prompt = PROMPT_TEMPLATE.format(function_spec=self._fn_spec(), context=scratchpad.results_repr(), task=task)
 
-        fn_response = self.model.invoke(prompt, stop=["<bot_end>"])
+        fn_response = self.model.invoke(prompt, stop=["<bot_end>"], temperature=temperature)
         fn_call = fn_response[6:]
 
         # ------------------------------------------------

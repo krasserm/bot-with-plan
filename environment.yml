@@ -1,4 +1,4 @@
-name: krasserm-gba
+name: grammar-based-agents
 channels:
   - pytorch
   - nvidia

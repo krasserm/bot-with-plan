@@ -54,7 +54,7 @@ class SearchWikipediaTool(Tool):
         top_k_related_nodes: int = 3,
         similarity_search_top_k_nodes: int = 100,
         similarity_search_rescore_multiplier: int = 4,
-        extractor: ContentExtractor | None = None,
+        use_extractor: bool = True,
         cache_dir: Path | None = None,
     ):
         """Search Wikipedia for information.
@@ -67,7 +67,7 @@ class SearchWikipediaTool(Tool):
         :param top_k_related_nodes: Number of related nodes to use in response generation.
         :param similarity_search_top_k_nodes: Number of top nodes to use in similarity search.
         :param similarity_search_rescore_multiplier: Rescore multiplier for similarity search.
-        :param extractor: The content extractor to use for extracting relevant information.
+        :param use_extractor: Whether to use a content extractor for retrieved nodes.
         :param cache_dir: The cache directory to use for downloaded artifacts. By default the huggingface cache directory is used.
         """
         self._top_k_nodes = top_k_nodes
@@ -80,8 +80,7 @@ class SearchWikipediaTool(Tool):
         self._embedding_model = embedding_model
         self._reranker = rerank_model
         self._query_rewriter = QueryRewriter(llm=llm)
-        self._extractor = extractor
-
+        self._extractor = ContentExtractor(model=llm) if use_extractor else None
         self._extractor_query_pattern = re.compile(r"^(search (for|to))|(search wikipedia (for|to))\s", re.IGNORECASE)
 
         self._int8_index_view = self._load_int8_index(cache_dir=cache_dir)
@@ -148,7 +147,7 @@ class SearchWikipediaTool(Tool):
     ) -> str:
         """Useful for searching factual information in Wikipedia."""
 
-        search_query = self._query_rewriter.rewrite(task)
+        search_query = self._query_rewriter.rewrite(task, natural_language=True)
 
         logger.warning("Searching wikipedia for query '%s'", search_query)
 

@@ -60,7 +60,7 @@ class SearchInternetTool(Tool):
         fetch_webpage_multiplier: int = 2,
         fetch_webpage_timeout: float = 5.0,
         max_concurrent_requests: int = 10,
-        extractor: ContentExtractor | None = None,
+        use_extractor: bool = True,
     ):
         """Search the internet for information.
 
@@ -75,7 +75,7 @@ class SearchInternetTool(Tool):
         :param fetch_webpage_multiplier: The multiplier for the number of webpages to fetch.
         :param fetch_webpage_timeout: The timeout for fetching webpages.
         :param max_concurrent_requests: The maximum number of concurrent requests.
-        :param extractor: The content extractor to use for extracting relevant information.
+        :param use_extractor: Whether to use a content extractor for retrieved nodes.
         """
         self._llm_client = ChatClient(llm)
         self._reranker = rerank_model
@@ -87,7 +87,7 @@ class SearchInternetTool(Tool):
         self._min_score = min_score
         self._fetch_webpage_multiplier = fetch_webpage_multiplier
         self._fetch_webpage_timeout = fetch_webpage_timeout
-        self._extractor = extractor
+        self._extractor = ContentExtractor(model=llm) if use_extractor else None
         self._query_rewriter = QueryRewriter(llm=llm)
         self._query_pool = ThreadPoolExecutor(max_workers=max_concurrent_requests)
         self._extractor_query_pattern = re.compile(
@@ -104,7 +104,7 @@ class SearchInternetTool(Tool):
     ) -> str:
         """Useful for searching up-to-date information on the internet."""
 
-        search_query = self._query_rewriter.rewrite(task)
+        search_query = self._query_rewriter.rewrite(task, natural_language=False)
 
         logger.warning("Searching the internet for query '%s'", search_query)
 

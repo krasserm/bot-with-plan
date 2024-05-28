@@ -1,4 +1,0 @@
-{
-  "summary": "The user has requested to know the name of Leonardo DiCaprio's current girlfriend and her age raised to the power of 0.7. I have determined that Leonardo DiCaprio's current girlfriend is Italian model Vittoria Ceretti, and she is 25 years old.",
-  "answer": "The current girlfriend of Leonardo DiCaprio is Vittoria Ceretti, and the value of her age (which is 25) raised to the power of 0.7 is approximately 9.51827."
-}

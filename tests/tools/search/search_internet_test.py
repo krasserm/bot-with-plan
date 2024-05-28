@@ -1,20 +1,19 @@
 import pytest
 
-from gba.tools.search import ContentExtractor, SearchInternetTool
+from gba.tools.search import SearchInternetTool
 from gba.utils import Scratchpad
 
 
 @pytest.fixture(scope="module")
-def search_internet_tool(searxng_endpoint, llama3, rerank_model):
+def search_internet_tool(searxng_endpoint, llama3_instruct, rerank_model):
     yield SearchInternetTool(
-        llm=llama3,
+        llm=llama3_instruct,
         rerank_model=rerank_model,
         searxng_endpoint=searxng_endpoint,
         fetch_webpage_timeout=5.0,
         top_k_documents=3,
         top_k_nodes_per_document=5,
         top_k_snippets=None,
-        extractor=ContentExtractor(model=llama3),
     )
 
 

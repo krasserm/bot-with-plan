@@ -5,8 +5,8 @@ from gba.utils import Scratchpad, ScratchpadEntry
 
 
 @fixture(scope="module")
-def respond_tool(mistral_instruct):
-    yield RespondTool(model=mistral_instruct)
+def respond_tool(llama3_instruct):
+    yield RespondTool(model=llama3_instruct)
 
 
 def test_response_from_context(respond_tool):

@@ -1,6 +1,6 @@
 from pytest import fixture
 
-from gba.tools.call.python import FunctionCallTool
+from gba.tools.call import FunctionCallTool
 from gba.utils import Scratchpad
 
 
@@ -10,8 +10,8 @@ def order_item(item: str, quantity: int) -> str:
 
 
 @fixture(scope="module")
-def call_tool(code_llama):
-    yield FunctionCallTool(model=code_llama, fn=order_item)
+def call_tool(llama3_instruct):
+    yield FunctionCallTool(model=llama3_instruct, fn=order_item)
 
 
 def test_call_with_empty_scratchpad(call_tool):

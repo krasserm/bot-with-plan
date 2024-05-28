@@ -5,8 +5,8 @@ from gba.utils import Scratchpad
 
 
 @fixture(scope="module")
-def calculate_tool(code_llama):
-    yield CalculateTool(model=code_llama)
+def calculate_tool(llama3_instruct):
+    yield CalculateTool(model=llama3_instruct)
 
 
 def test_calculate(calculate_tool):

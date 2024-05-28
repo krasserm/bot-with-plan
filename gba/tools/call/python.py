@@ -1,12 +1,10 @@
 import inspect
 
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_experimental.chat_models.llm_wrapper import ChatWrapper
-
+from gba.client import ChatClient, Llama3Instruct
 from gba.tools.base import Tool
 from gba.utils import Scratchpad, exec_code, extract_code
 
-SYSTEM_PROMPT = """Provide answers in Python wrapped into ```."""
+SYSTEM_PROMPT = """Provide answers in Python code formatted as ```python <code> ```"""
 
 
 USER_PROMPT_TEMPLATE = """The signature and documentation of the function to be called:
@@ -36,8 +34,8 @@ SPEC_TEMPLATE = '''def {name}{signature}:
 
 
 class FunctionCallTool(Tool):
-    def __init__(self, model: ChatWrapper, fn, summarizer=None):
-        self.model = model
+    def __init__(self, model: Llama3Instruct, fn, summarizer=None):
+        self.client = ChatClient(model=model)
         self.fn = fn
         self.fn_params = list(inspect.signature(fn).parameters.keys())
         self.summarizer = summarizer
@@ -50,22 +48,20 @@ class FunctionCallTool(Tool):
     def doc(self) -> str:
         return self.fn.__doc__
 
-    def run(self, request: str, task: str, scratchpad: Scratchpad, **kwargs) -> str:
-        results = [se.result for se in scratchpad.entries]
-        results_str = "\n".join(results)
-
-        if not results_str:
-            results_str = "<no context information available>"
+    def run(self, request: str, task: str, scratchpad: Scratchpad, temperature: float = -1, **kwargs) -> str:
+        user_prompt = USER_PROMPT_TEMPLATE.format(
+            function_spec=self._fn_spec(),
+            context=scratchpad.results_repr(),
+            task=task,
+        )
 
         messages = [
-            SystemMessage(content=SYSTEM_PROMPT),
-            HumanMessage(
-                content=USER_PROMPT_TEMPLATE.format(function_spec=self._fn_spec(), context=results_str, task=task)
-            ),
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
         ]
 
-        ai_message = self.model.invoke(input=messages, prompt_ext=self.model.ai_n_beg)
-        code = extract_code(ai_message.content.replace("```", "```python", 1))
+        message = self.client.complete(messages, temperature=temperature)
+        code = extract_code(message["content"], remove_print_statements=True)
 
         arguments = exec_code(code, result_variable_name="arguments")
         arguments = {k: v for k, v in arguments.items() if k in self.fn_params}

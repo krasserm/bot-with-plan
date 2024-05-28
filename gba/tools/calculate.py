@@ -23,6 +23,7 @@ Solve the following task with Python code using context information if needed:
 Use a variable for each required numeric value from the context.
 Always assign the final result to variable "result".
 The result must be either a number or a list of numbers.
+If you need the current date and/or time use the datetime package.
 
 Let's write the code step by step."""
 

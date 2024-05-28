@@ -1,4 +1,4 @@
-name: krasserm-gba-autotrain
+name: grammar-based-agents-autotrain
 channels:
   - pytorch
   - nvidia

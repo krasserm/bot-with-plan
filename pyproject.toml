@@ -50,10 +50,10 @@ exclude = ["gba/client/grammar.py"]
 "**/__init__.py" = ["F401"]
 
 [[tool.mypy.overrides]]
-module = [
-    "requests",
-]
+module = ["requests"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 searxng_endpoint = "http://localhost:8080"
+llama3_instruct_endpoint = "http://localhost:8084/completion"
+mistral_instruct_endpoint = "http://localhost:8081/completion"

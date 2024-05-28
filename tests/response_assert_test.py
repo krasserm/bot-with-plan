@@ -4,8 +4,8 @@ from tests.helpers.response_assert import ResponseAsserter
 
 
 @pytest.fixture(scope="module")
-def response_asserter(llama3):
-    yield ResponseAsserter(llama3)
+def response_asserter(llama3_instruct):
+    yield ResponseAsserter(llama3_instruct)
 
 
 @pytest.mark.parametrize(
