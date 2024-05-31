@@ -36,7 +36,7 @@ The `.searxng/settings.yaml` file used in this project has been modified to addi
      - json
    ```
 
-See [model serving](../../../README.md#model-serving) for instructions on how to serve the Llama 3 model used by these tools.
+See [getting started](../../../README.md#getting-started) for instructions how to serve the Llama 3 model used by these tools.
 
 ### Usage
 

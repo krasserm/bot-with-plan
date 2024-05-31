@@ -1,13 +1,13 @@
 ## Key features
 
 - ReAct-style LLM agents with planning separated from function calling
-- Planner fine-tuning on synthetic trajectories from simulation environments
+- Planner fine-tuning on synthetic trajectories from an agent simulation
 - Generalization of planning behavior from simulation to real environments
 - Schema-guided generation for reliable communication between LLM modules
 
 You can read more in the following [overview](#overview) and in these articles:
 
-- Planner fine-tuning on synthetic agent trajectories
+- [Planner fine-tuning on synthetic agent trajectories](https://krasserm.github.io/2024/05/31/planner-fine-tuning/)
 - [Separation of planning concerns in open LLM agents](https://krasserm.github.io/2024/03/06/modular-agent/)
 - [Schema-guided generation with open LLMs](https://krasserm.github.io/2023/12/18/llm-json-mode/)
 - [Schema-guided generation in LangChain agents](https://krasserm.github.io/2023/12/10/grammar-based-agents/)
@@ -130,7 +130,7 @@ See also [search tools setup](gba/tools/search/README.md#setup) for further deta
 
 - [planner_finetuned.ipynb](planner_finetuned.ipynb). Agent examples with fine-tuned planner.
 - [planner_zeroshot.ipynb](planner_zeroshot.ipynb). Agent examples with zero-shot planner.
-- [json_mode.ipynb](json_mode.ipynb.ipynb). Examples of schema-guided generation with open LLMs.
+- [json_mode.ipynb](json_mode.ipynb). Examples of schema-guided generation with open LLMs.
 
 ## Resources
 
