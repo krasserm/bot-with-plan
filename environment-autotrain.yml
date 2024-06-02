@@ -1,4 +1,4 @@
-name: grammar-based-agents-autotrain
+name: bot-with-plan-autotrain
 channels:
   - pytorch
   - nvidia

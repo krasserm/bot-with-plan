@@ -77,7 +77,7 @@ Clone the project from GitHub, create a conda environment and install dependenci
 
 ```shell
 conda env create -f environment.yml
-conda activate grammar-based-agents
+conda activate bot-with-plan
 poetry install
 ```
 

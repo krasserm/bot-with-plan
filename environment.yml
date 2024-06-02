@@ -1,4 +1,4 @@
-name: grammar-based-agents
+name: bot-with-plan
 channels:
   - pytorch
   - nvidia
