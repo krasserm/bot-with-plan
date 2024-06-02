@@ -40,7 +40,7 @@ The main idea is to reduce the responsibilites of a planner module as far as pos
 
 With this reduction of planner responsibilities, it is possible to elicit useful planning behavior from 7B LLMs that have not been fine-tuned on function calling at all, and to efficiently [fine-tune a 7B LLM](train/) on synthetic trajectories from an [agent simulation](simulation/) to reach GPT-4 level planning performance.
 
-A stricter separation of concerns in a LLM agent also requires reliable communication among modules. This project therefore makes heavy use of [schema-guided generation](json_mode.ipynb). Modules specify an output JSON schema via a pydantic model which is then converted into a grammar that is enforced by a llama.cpp server during constrained decoding, hence the project name *grammar-based agents*.
+A stricter separation of concerns in a LLM agent also requires reliable communication among modules. This project therefore makes heavy use of [schema-guided generation](json_mode.ipynb). Modules specify an output JSON schema via a pydantic model which is then converted into a grammar that is enforced by a llama.cpp server during constrained decoding.
 
 ### Environments
 
