@@ -137,6 +137,14 @@ class SearchWikipediaTool(Tool):
 
         return Index.restore(int8_index_path, view=True)
 
+    def search(
+        self,
+        query: str,
+        temperature: float = -1,
+        **kwargs,
+    ) -> str:
+        return self.run(request="", task=query, scratchpad=Scratchpad(), temperature=temperature, **kwargs)
+
     def run(
         self,
         request: str,
