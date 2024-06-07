@@ -134,9 +134,9 @@ See also [search tools setup](gba/tools/search/README.md#setup) for further deta
 
 ## Resources
 
-| Resource                   | Link                                                                                                                                                                                  | Generation instructions         |
-|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
-| Fine-tuned planner weights | [krasserm/gba-planner-7B-v0.1](https://huggingface.co/krasserm/gba-planner-7B-v0.1)<br/>[krasserm/gba-planner-7B-v0.1-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF) | [training docs](train/)         |
-| Fine-tuning dataset        | [krasserm/gba-trajectories](https://huggingface.co/datasets/krasserm/gba-trajectories)                                                                                                | [simulation docs](simulation/)  |
-| Full simulation data       | [gba-output.zip](https://martin-krasser.com/gba/gba-output.zip)                                                                                                                       | [simulation docs](simulation/)  |
-| Full evaluation data       | [gba-output-eval.zip](https://martin-krasser.com/gba/gba-output-eval.zip)                                                                                                             | [simulation docs](simulation/)  |
+| Resource                   | Link                                                                                            | Generation instructions         |
+|----------------------------|-------------------------------------------------------------------------------------------------|---------------------------------|
+| Fine-tuned planner weights | [krasserm/gba-planner-7B-v0.1-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF)   | [training docs](train/)         |
+| Fine-tuning dataset        | [krasserm/gba-trajectories](https://huggingface.co/datasets/krasserm/gba-trajectories)          | [simulation docs](simulation/)  |
+| Full simulation data       | [gba-output.zip](https://martin-krasser.com/gba/gba-output.zip)                                 | [simulation docs](simulation/)  |
+| Full evaluation data       | [gba-output-eval.zip](https://martin-krasser.com/gba/gba-output-eval.zip)                       | [simulation docs](simulation/)  |
