@@ -1,22 +1,24 @@
 ## Key features
 
 - ReAct-style LLM agents with planning separated from function calling
-- Planner fine-tuning on synthetic trajectories from an agent simulation
+- [Planner fine-tuning](train/) on synthetic trajectories from an [agent simulation](simulation/)
 - Generalization of planning behavior from simulation to real environments
-- Schema-guided generation for reliable communication between LLM modules
-
-You can read more in the following [overview](#overview) and in these articles:
-
-- [Planner fine-tuning on synthetic agent trajectories](https://krasserm.github.io/2024/05/31/planner-fine-tuning/)
-- [Separation of planning concerns in open LLM agents](https://krasserm.github.io/2024/03/06/modular-agent/)
-- [Schema-guided generation with open LLMs](https://krasserm.github.io/2023/12/18/llm-json-mode/)
-- [Schema-guided generation in LangChain agents](https://krasserm.github.io/2023/12/10/grammar-based-agents/)
+- [Schema-guided generation](json_mode.ipynb) for reliable communication between LLM modules
 
 This project also provides fully-functional RAG-based [search tools](gba/tools/search/):
 
 - Wikipedia search based on a quantized local search index
 - Internet search without an API key thanks to [SearXNG](https://github.com/searxng/searxng)
 - Summarization of retrieved documents with Llama-3-8B-Instruct
+
+## Articles
+
+You can find more details in these articles:
+
+- [Planner fine-tuning on synthetic agent trajectories](https://krasserm.github.io/2024/05/31/planner-fine-tuning/)
+- [Separation of planning concerns in open LLM agents](https://krasserm.github.io/2024/03/06/modular-agent/)
+- [Schema-guided generation with open LLMs](https://krasserm.github.io/2023/12/18/llm-json-mode/)
+- [Schema-guided generation in LangChain agents](https://krasserm.github.io/2023/12/10/grammar-based-agents/)
 
 ## Table of contents
 
