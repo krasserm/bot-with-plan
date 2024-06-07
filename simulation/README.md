@@ -8,7 +8,7 @@ Fine-tuned planners can also be [evaluated](#planner-evaluation) in the simulati
 
 ### Setup
 
-Add your OpenAI API key to [.env][../.env], then run `export PYTHONPATH=.`
+Add your OpenAI API key to [.env](../.env), then `export PYTHONPATH=.`
 
 ### Dataset generation
 
