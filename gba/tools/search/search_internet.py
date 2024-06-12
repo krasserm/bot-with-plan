@@ -94,6 +94,14 @@ class SearchInternetTool(Tool):
             r"^(search (for|to))|(search the internet (for|to))\s", re.IGNORECASE
         )
 
+    def search(
+        self,
+        query: str,
+        temperature: float = -1,
+        **kwargs,
+    ) -> str:
+        return self.run(request="", task=query, scratchpad=Scratchpad(), temperature=temperature, **kwargs)
+
     def run(
         self,
         request: str,

@@ -42,17 +42,14 @@ See [getting started](../../../README.md#getting-started) for instructions how t
 
 ```python
 from gba.tools.search import create_search_internet_tool
-from gba.utils import Scratchpad
 
 search_internet = create_search_internet_tool(
     llama3_endpoint="http://localhost:8084/completion",
     searxng_endpoint="http://localhost:8080",
 )
 
-response = search_internet.run(
-    task="When was the video game 'The Last of Us' released",
-    request="",
-    scratchpad=Scratchpad(),
+response = search_internet.search(
+    query="When was the video game 'The Last of Us' released"
 )
 ```
 
@@ -79,16 +76,13 @@ For a more detailed explanation of the implementation details refer to the secti
 
 ```python
 from gba.tools.search import create_search_wikipedia_tool
-from gba.utils import Scratchpad
 
 search_wikipedia = create_search_wikipedia_tool(
    llama3_endpoint="http://localhost:8084/completion",
 )
 
-response = search_wikipedia.run(
-   task="Search Wikipedia for the launch date of the first iPhone.",
-   request="",
-   scratchpad=Scratchpad(),
+response = search_wikipedia.search(
+   search="Search Wikipedia for the launch date of the first iPhone."
 )
 ```
 
