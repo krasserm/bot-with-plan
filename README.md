@@ -11,6 +11,8 @@ This project also provides fully-functional RAG-based [search tools](gba/tools/s
 - Internet search without an API key thanks to [SearXNG](https://github.com/searxng/searxng)
 - Summarization of retrieved documents with Llama-3-8B-Instruct
 
+See also [related work](#related-work).
+
 ## Articles
 
 You can find more details in these articles:
@@ -34,7 +36,7 @@ You can find more details in these articles:
 
 [ReAct](https://arxiv.org/abs/2210.03629)-style agents are often based on LLMs that unify a wide range of responsibilities in a single model. They must be able to decompose complex user instructions, plan actions, call tools with correct arguments, reason about observations and adjust planning if needed. Smaller LLMs often struggle to cover this wide range of responsibilities.
 
-This project is experimental work on separating planning from function calling concerns in ReAct-style LLM agents. This separation makes the planner module of an agent responsible only for describing the task of the next step in an informal way and selecting an appropriate tool for that step, without having to deal with function calling details.
+This project is experimental work on separating planning from function calling concerns in ReAct-style LLM agents. This separation makes the planner module of an agent responsible only for describing the task<sup>1)</sup> of the next step in an informal way and selecting an appropriate tool for that step, without having to deal with function calling details.
 
 The main idea is to reduce the responsibilites of a planner module as far as possible so that smaller LLMs can be better utilized for implementation. Responsibility of translating a task description into a function call is shifted either to a generic function calling model or to individual, specialized tools directly.
 
@@ -43,6 +45,8 @@ The main idea is to reduce the responsibilites of a planner module as far as pos
 With this reduction of planner responsibilities, it is possible to elicit useful planning behavior from 7B LLMs that have not been fine-tuned on function calling at all, and to efficiently [fine-tune a 7B LLM](train/) on synthetic trajectories from an [agent simulation](simulation/) to reach GPT-4 level planning performance.
 
 A stricter separation of concerns in a LLM agent also requires reliable communication among modules. This project therefore makes heavy use of [schema-guided generation](json_mode.ipynb). Modules specify an output JSON schema via a pydantic model which is then converted into a grammar that is enforced by a llama.cpp server during constrained decoding.
+
+<sup>1)</sup> We use a slightly different terminology here compared to other agent frameworks: what we call *user request* is often called *task* in other frameworks, and what we call *task* is often called *action* in other frameworks.
 
 ### Environments
 
@@ -142,3 +146,9 @@ See also [search tools setup](gba/tools/search/README.md#setup) for further deta
 | Fine-tuning dataset        | [krasserm/gba-trajectories](https://huggingface.co/datasets/krasserm/gba-trajectories)          | [simulation docs](simulation/)  |
 | Full simulation data       | [gba-output.zip](https://martin-krasser.com/gba/gba-output.zip)                                 | [simulation docs](simulation/)  |
 | Full evaluation data       | [gba-output-eval.zip](https://martin-krasser.com/gba/gba-output-eval.zip)                       | [simulation docs](simulation/)  |
+
+## Related work
+
+- [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629). A frequently used paradigm in LLM agents that combines reasoning and tool usage (= acting) in an interleaved manner.
+- [Husky: A Unified, Open-Source Language Agent for Multi-Step Reasoning](https://arxiv.org/abs/2406.06469). Very similar to the *bot-with-plan* project w.r.t. separation of concerns, planner training and dataset generation.
+- [AUTOACT: Automatic Agent Learning from Scratch via Self-Planning](https://arxiv.org/abs/2401.05268). Also decouples planning from function calling by using a planner that only selects tool names for the next step without generating tool arguments.
