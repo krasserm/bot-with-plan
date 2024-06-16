@@ -18,7 +18,7 @@ See also [related work](#related-work).
 You can find more details in these articles:
 
 - [Planner fine-tuning on synthetic agent trajectories](https://krasserm.github.io/2024/05/31/planner-fine-tuning/)
-- [Separation of planning concerns in open LLM agents](https://krasserm.github.io/2024/03/06/modular-agent/)
+- [Separation of planning concerns in LLM agents](https://krasserm.github.io/2024/03/06/modular-agent/)
 - [Schema-guided generation with open LLMs](https://krasserm.github.io/2023/12/18/llm-json-mode/)
 - [Schema-guided generation in LangChain agents](https://krasserm.github.io/2023/12/10/grammar-based-agents/)
 - [Enhancing Internet Search with RAG and Open Large Language Models](https://cstub.github.io/posts/internet-rag-search-with-open-llms/)
