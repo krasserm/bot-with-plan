@@ -4,7 +4,6 @@ from pathlib import Path
 
 import jsonargparse
 from datasets import Dataset
-from transformers import AutoTokenizer
 
 from gba.planner.fine_tuned import FineTunedPlanner
 from gba.utils import Scratchpad
@@ -64,14 +63,10 @@ def main(args):
     if not args.output_dir.exists():
         args.output_dir.mkdir(parents=True)
 
-    tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.2")
-
     def format_example(example):
-        messages = [
-            {"role": "user", "content": example["prompt"]},
-            {"role": "assistant", "content": example["target"]},
-        ]
-        return {"text": tokenizer.apply_chat_template(messages, tokenize=False)}
+        prompt = example["prompt"]
+        target = example["target"]
+        return {"text": f"<s>[INST] {prompt} [/INST] {target}</s>"}
 
     ds = Dataset.from_generator(
         partial(
@@ -96,6 +91,6 @@ if __name__ == "__main__":
     parser.add_argument("--trajectories_dir", type=Path, default=Path("output", "trajectories"))
     parser.add_argument("--evaluations_dir", type=Path, default=Path("output", "evaluations"))
     parser.add_argument("--rating_threshold", type=int, default=4)
-    parser.add_argument("--validation_size", type=int, default=5)
+    parser.add_argument("--validation_size", type=int, default=30)
 
     main(parser.parse_args())

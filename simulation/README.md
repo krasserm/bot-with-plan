@@ -4,7 +4,7 @@ Uses a GPT-4 based planner to generate agent trajectories in a simulation enviro
 
 The [GPT-4 based planner](planner.py), used for driving [dataset generation](#dataset-generation), is a ReAct-style planner that interacts with these tools. The generated trajectories of tool interactions are then converted to a fine-tuning dataset for training smaller, open-source LLMs to mimic the behavior of the GPT-4 based planner. See [planner fine-tuning](../train/README.md) for further details on fine-tuning a planner module with the generated dataset.
 
-Fine-tuned planners can also be [evaluated](#planner-evaluation) in the simulation environment. By replacing the GPT-4 based planner with a fine-tuned planner, the agent simulation can be used to evaluate the performance of the fine-tuned planner. It can also be used for evaluating an open-source zero-shot planner that has not been fine-tuned on any simulation data.
+Fine-tuned planners can also be [evaluated](#planner-evaluation) in the simulation environment. By replacing the GPT-4 based planner with a fine-tuned planner, the agent simulation can be used to evaluate the performance of the fine-tuned planner, incl. the effect of [prompt masking](#prompt-masking). It can also be used for evaluating an open-source zero-shot planner that has not been fine-tuned on simulation data.
 
 ### Setup
 
@@ -69,13 +69,13 @@ python simulation/data/package.py \
   --trajectories_dir=output/trajectories \
   --evaluations_dir=output/evaluations \
   --output_dir=output/dataset \
-  --validation_size=5 \
+  --validation_size=30 \
   --rating_threshold=4
 ```
 
 ### Planner evaluation
 
-Instead of running planner evaluatiion yourself, you can also download the complete output of the following commands from [here](https://martin-krasser.com/gba/gba-output-eval.zip). Evaluation is done on a separate, smaller dataset consisting of 20 simple and 30 more complex requests. They can be created with:
+Instead of running planner evaluation yourself, you can also download the complete output of the following commands from [here](https://martin-krasser.com/gba/gba-output-eval.zip). Evaluation is done on a separate, smaller dataset consisting of 20 simpler and 30 more complex requests. They can be created with:
 
 ```shell
 python simulation/data/request/single_step.py \
@@ -90,7 +90,7 @@ python simulation/data/request/multi_step.py \
 
 Evaluated are the following planners:
 
-- the GPT-4 based teacher planner used in the previous section but without constraining it to generate direct answers for single-step requests
+- the GPT-4 based planner used in the previous section but without constraining it to generate direct answers for single-step requests
 - a Mistral-7B based fine-tuned student planner
 - a Mistral-7B-Instruct based zero-shot planner
 
@@ -104,20 +104,19 @@ do
   python simulation/data/trajectory.py \
     --planner=openai \
     --requests_dir=output-eval/requests \
-    --output_dir=output-eval/openai/trajectories_$i \
+    --output_dir=output-eval/gpt-4/trajectories_$i \
     --num_workers=20
-
   python simulation/data/evaluation.py \
     --requests_dir=output-eval/requests \
-    --trajectories_dir=output-eval/openai/trajectories_$i \
-    --output_dir=output-eval/openai/evaluations_$i \
+    --trajectories_dir=output-eval/gpt-4/trajectories_$i \
+    --output_dir=output-eval/gpt-4/evaluations_$i \
     --num_workers=20
 done
 ```
 
 #### Fine-tuned planner
 
-Evaluated are [8-bit and 4-bit quantized versions](https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF) of the [fine-tuned planner](../train/README.md). The following script shows evaluation of the 8-bit quantized model.
+Evaluated are [8-bit and 4-bit quantized versions](https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF) of [gba-planner-7B-v0.1](../train/README.md#gba-planner-v01) (see [setup](../README.md#setup) for serving details). The following script shows evaluation of the 8-bit quantized model.
 
 ```shell
 for i in {1..4}
@@ -129,7 +128,6 @@ do
     --requests_dir=output-eval/requests \
     --output_dir=output-eval/finetnued-8bit/trajectories_$i \
     --num_workers=5
-
   python simulation/data/evaluation.py \
     --requests_dir=output-eval/requests \
     --trajectories_dir=output-eval/finetnued-8bit/trajectories_$i \
@@ -152,12 +150,78 @@ do
     --requests_dir=output-eval/requests \
     --output_dir=output-eval/zeroshot-8bit/trajectories_$i \
     --num_workers=5
-
   python simulation/data/evaluation.py \
     --requests_dir=output-eval/requests \
     --trajectories_dir=output-eval/zeroshot-8bit/trajectories_$i \
     --output_dir=output-eval/zeroshot-8bit/evaluations_$i \
     --num_workers=5
+done
+```
+
+The statistics over these runs are calculated and summarized in [planner_evaluation.ipynb](../planner_evaluation.ipynb).
+
+### Prompt masking
+
+Instead of running this evaluation yourself, you can also download the complete output of the following commands from [here](https://martin-krasser.com/gba/gba-output-eval-masking.zip). This evaluation re-uses [requests generated](#generate-requests) in the [previous section](#planner-evaluation). Evaluated are two [planner models](../train/README.md#gba-planner-7b-v02) (see [setup](../README.md#setup) for serving details):
+
+- `gba-planner-7B-v0.2`, fine-tuned with a loss over the full sequence (prompt not masked)
+- `gba-planner-7B-completion-only-v0.2`, fine-tuned with a loss over the completion only (prompt masked)
+
+Evaluation of `gba-planner-v0.2`:
+
+```shell
+for i in {1..12}
+do
+  python simulation/data/trajectory.py \
+    --planner=finetuned \
+    --planner_host=localhost \
+    --planner_port=9083 \
+    --requests_dir=output-eval/requests \
+    --output_dir=output-eval-masking/prompt-and-completion/trajectories_$i \
+    --num_workers=5
+  python simulation/data/evaluation.py \
+    --requests_dir=output-eval/requests \
+    --trajectories_dir=output-eval-masking/prompt-and-completion/trajectories_$i \
+    --output_dir=output-eval-masking/prompt-and-completion/evaluations_$i \
+    --num_workers=5
+done
+```
+
+Evaluation of `gba-planner-completion-only-v0.2`:
+
+```shell
+for i in {1..12}
+do
+  python simulation/data/trajectory.py \
+    --planner=finetuned \
+    --planner_host=localhost \
+    --planner_port=9084 \
+    --requests_dir=output-eval/requests \
+    --output_dir=output-eval-masking/completion-only/trajectories_$i \
+    --num_workers=5
+  python simulation/data/evaluation.py \
+    --requests_dir=output-eval/requests \
+    --trajectories_dir=output-eval-masking/completion-only/trajectories_$i \
+    --output_dir=output-eval-masking/completion-only/evaluations_$i \
+    --num_workers=5
+done
+```
+
+Evaluation of the GPT-4 based planner for reference:
+
+```shell
+for i in {1..12}
+do
+  python simulation/data/trajectory.py \
+    --planner=openai \
+    --requests_dir=output-eval/requests \
+    --output_dir=output-eval-masking/gpt-4/trajectories_$i \
+    --num_workers=20
+  python simulation/data/evaluation.py \
+    --requests_dir=output-eval/requests \
+    --trajectories_dir=output-eval-masking/gpt-4/trajectories_$i \
+    --output_dir=output-eval-masking/gpt-4/openai/evaluations_$i \
+    --num_workers=20
 done
 ```
 

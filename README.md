@@ -32,6 +32,10 @@ You can find more details in these articles:
   - [Setup](#setup)
   - [Examples](#examples)
 - [Resources](#resources)
+  - [Models](#models)
+  - [Datasets](#datasets)
+  - [Simulation outputs](#simulation-outputs)
+- [Related work](#related-work)
 
 ## Overview
 
@@ -45,36 +49,46 @@ The main idea is to reduce the responsibilites of a planner module as far as pos
 
 With this reduction of planner responsibilities, it is possible to elicit useful planning behavior from 7B LLMs that have not been fine-tuned on function calling at all, and to efficiently [fine-tune a 7B LLM](train/) on synthetic trajectories from an [agent simulation](simulation/) to reach GPT-4 level planning performance.
 
-A stricter separation of concerns in a LLM agent also requires reliable communication among modules. This project therefore makes heavy use of [schema-guided generation](json_mode.ipynb). Modules specify an output JSON schema via a pydantic model which is then converted into a grammar that is enforced by a llama.cpp server during constrained decoding.
+A stricter separation of concerns in a LLM agent also requires reliable communication between modules. This project therefore makes heavy use of [schema-guided generation](json_mode.ipynb). Modules specify an output JSON schema via a pydantic model which is then converted into a grammar that is enforced by a llama.cpp server during constrained decoding.
 
 <sup>1)</sup> We use a slightly different terminology here compared to other agent frameworks: what we call *user request* is often called *task* in other frameworks, and what we call *task* is often called *action* in other frameworks.
 
 ### Environments
 
-- Simulation environment. Interface is a set of [simulated tools](simulation/tools/), instead of real ones. For example, a simulated `search_internet` tool, backed by GPT-4, generates search results from the GPT-4's internal memory instead of actually searching the internet. For learning to plan it is less important if observation provided by tools are factual or hallucinated, it is more important to make the right decisions based on whatever observations are made. In a simulation environment it is often easier to generate agent trajectories than in a real environment.
+- Simulation environment. Interface is a set of [simulated tools](simulation/tools/), instead of real ones. For example, a simulated `search_internet` tool, backed by GPT-4, generates search results from GPT-4's internal memory instead of actually searching the internet. For learning to plan it is less important if observation provided by tools are factual or hallucinated, it is more important to make the right decisions based on whatever observations are made. In a simulation environment it is often easier to generate agent trajectories than in a real environment.
 
-- Real environment. Interface is a set of [real tools](gba/tools/). In this environment, for example, a RAG-based `search_internet` tool actually searches the internet and summarizes retrieved information with an LLM such that a planner can conveniently handle it. In qualitative evaluations, a planner fine-tuned on trajectories from an agent simulation generalizes well to observations made in a real environment. If a different set of real tools is needed for an application, corresponding simulated tools can easily be implemented and application-specific trajectories generated for planner fine-tuning.
+- Real environment. Interface is a set of [real tools](gba/tools/). In this environment, for example, a RAG-based `search_internet` tool actually searches the internet and summarizes retrieved information with an LLM such that a planner can conveniently handle it. A planner fine-tuned on trajectories from an agent simulation generalizes well to observations made in a real environment. If a different set of real tools is needed for an application, corresponding simulated tools can easily be implemented and application-specific trajectories generated for planner fine-tuning.
 
 ### Planners
 
 - [OpenAIPlanner](simulation/planner.py). A GPT-4 based planner used to generate trajectories in an [agent simulation](simulation/).
-- [FineTunedPlanner](gba/planner/fine_tuned.py). A Mistral-7B-v0.1 based planner [fine-tuned](train/) on trajectories generated with the GPT-4 based planner.
+- [FineTunedPlanner](gba/planner/fine_tuned.py). A Mistral-7B based planner [fine-tuned](train/) on trajectories generated with the GPT-4 based planner.
 - [ZeroShotPlanner](gba/planner/zero_shot.py). A Mistral-7B-Instruct-v0.2 based zero-shot planner, a general-purpose instruction-tuned model (baseline).
 
 ### Evaluation
 
-Evaluated on a test set of 50 requests, generated for a wide range of topics, the fine-tuned planner reaches GPT-4 level performance (details [here](simulation/README.md#planner-evaluation)):
+Evaluated on a test set of 50 user requests, generated for a wide range of topics, the fine-tuned planner reaches GPT-4 level performance (details [here](simulation/README.md#planner-evaluation)):
 
 | series          | pass_rate   | bad_task_rate | completion_rate |
 |:----------------|:-----------:|:-------------:|:---------------:|
-| zero-shot 8bit  | 0.72 ± 0.05 | 0.30 ± 0.04   | 0.88 ± 0.02     |
-| fine-tuned 4bit | 0.89 ± 0.04 | 0.14 ± 0.01   | 0.96 ± 0.02     |
-| fine-tuned 8bit | 0.88 ± 0.04 | 0.09 ± 0.01   | 0.95 ± 0.03     |
-| gpt-4           | 0.91 ± 0.05 | 0.07 ± 0.01   | 0.97 ± 0.02     |
+| zero-shot 8bit  | 0.72 ± 0.03 | 0.30 ± 0.02   | 0.88 ± 0.01     |
+| fine-tuned 4bit | 0.89 ± 0.02 | 0.14 ± 0.01   | 0.96 ± 0.01     |
+| fine-tuned 8bit | 0.88 ± 0.02 | 0.09 ± 0.01   | 0.95 ± 0.02     |
+| gpt-4           | 0.91 ± 0.03 | 0.07 ± 0.01   | 0.97 ± 0.01     |
 
 - *pass rate* is defined as the fraction of requests that have been answered with a rating of 4 or higher.
 - *bad task rate* is the fraction of steps with a task description rating of 3 or lower.
 - *completion rate* is the number of requests that the agent could complete with a final answer in 10 steps or less.
+
+Another evaluation investigates if prompt masking during fine-tuning significantly impacts planner performance. With prompt masking, the loss is computed over the completion only. Without prompt masking the loss is computed over the full sequence i.e. the prompt and completion (details [here](simulation/README.md#prompt-masking)).
+
+| series                | pass_rate   | bad_task_rate | completion_rate |
+|:----------------------|:-----------:|:-------------:|:---------------:|
+| prompt-and-completion | 0.88 ± 0.01 | 0.12 ± 0.01   | 0.99 ± 0.01     |
+| completion-only       | 0.85 ± 0.01 | 0.14 ± 0.01   | 0.98 ± 0.01     |
+| gpt-4                 | 0.90 ± 0.01 | 0.11 ± 0.01   | 0.98 ± 0.01     |
+
+Prompt masking seems to decrease performance but it is not significant e.g. a *t-test* on the metrics of `prompt-and-completion` and `completion-only` series gives a p-value of `0.10` for `pass_rate` and `0.22` for `bad_task_rate`.
 
 ## Getting started
 
@@ -93,17 +107,22 @@ Download models:
 ```shell
 mkdir -p models
 
-# fine-tuned planner
 wget https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF/resolve/main/gba-planner-7B-v0.1-Q8_0.gguf?download=true \
   -O models/gba-planner-7B-v0.1-Q8_0.gguf
 
-# zero-shot planner
 wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q8_0.gguf?download=true \
   -O models/mistral-7b-instruct-v0.2.Q8_0.gguf
 
-# used by many tools
 wget https://huggingface.co/krasserm/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct-Q8_0.gguf?download=true \
   -O models/Meta-Llama-3-8B-Instruct-Q8_0.gguf
+
+# The following is only needed for prompt masking evaluation
+
+wget https://huggingface.co/krasserm/gba-planner-7B-v0.2-GGUF/resolve/main/gba-planner-7B-v0.2-Q8_0.gguf?download=true \
+  -O models/gba-planner-7B-v0.2-Q8_0.gguf
+
+wget https://huggingface.co/krasserm/gba-planner-7B-completion-only-v0.2-GGUF/resolve/main/gba-planner-completion-only-7B-v0.2-Q8_0.gguf?download=true \
+  -O models/gba-planner-completion-only-7B-v0.2-Q8_0.gguf
 ```
 
 Serve models on a local llama.cpp server:
@@ -115,8 +134,16 @@ docker run --gpus all --rm -p 8082:8080 -v $(realpath models):/models ghcr.io/gg
 docker run --gpus all --rm -p 8081:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-858f6b7 \
   -m /models/mistral-7b-instruct-v0.2.Q8_0.gguf -c 2048 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
 
-docker run --gpus all --rm -p 8084:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-858f6b7 \
+docker run --gpus all --rm -p 8084:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-17b291a \
   -m /models/Meta-Llama-3-8B-Instruct-Q8_0.gguf -c 8192 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
+
+# The following is only needed for prompt masking evaluation
+
+docker run --gpus all --rm -p 9083:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-17b291a \
+  -m /models/gba-planner-7B-v0.2-Q8_0.gguf -c 1024 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
+
+docker run --gpus all --rm -p 9084:8080 -v $(realpath models):/models ghcr.io/ggerganov/llama.cpp:server-cuda--b1-17b291a \
+  -m /models/gba-planner-7B-completion-only-v0.2-Q8_0.gguf -c 1024 --n-gpu-layers 33 --host 0.0.0.0 --port 8080
 ```
 
 The `search_internet` tool requires a SearXNG instance running locally. It can be started with
@@ -141,12 +168,21 @@ See also [search tools setup](gba/tools/search/README.md#setup) for further deta
 
 ## Resources
 
-| Resource                   | Link                                                                                            | Generation instructions         |
-|----------------------------|-------------------------------------------------------------------------------------------------|---------------------------------|
-| Fine-tuned planner weights | [krasserm/gba-planner-7B-v0.1-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF)   | [training docs](train/)         |
-| Fine-tuning dataset        | [krasserm/gba-trajectories](https://huggingface.co/datasets/krasserm/gba-trajectories)          | [simulation docs](simulation/)  |
-| Full simulation data       | [gba-output.zip](https://martin-krasser.com/gba/gba-output.zip)                                 | [simulation docs](simulation/)  |
-| Full evaluation data       | [gba-output-eval.zip](https://martin-krasser.com/gba/gba-output-eval.zip)                       | [simulation docs](simulation/)  |
+### Models
+
+- [krasserm/gba-planner-7B-v0.1-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF)
+- [krasserm/gba-planner-7B-v0.2-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.2-GGUF)
+- [krasserm/gba-planner-7B-completion-only-v0.2-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.2-GGUF)
+
+### Datasets
+
+- [krasserm/gba-trajectories](https://huggingface.co/datasets/krasserm/gba-trajectories)
+
+### Simulation outputs
+
+- [dataset generation output](https://martin-krasser.com/gba/gba-output.zip) (see [dataset generation](simulation/README.md#dataset-generation))
+- [planner evaluation output](https://martin-krasser.com/gba/gba-output-eval.zip) (see [planner evaluation](simulation/README.md#planner-evaluation))
+- [masking evaluation output](https://martin-krasser.com/gba/gba-output-eval-masking.zip) (see [prompt masking](simulation/README.md#prompt-masking))
 
 ## Related work
 

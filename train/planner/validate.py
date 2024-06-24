@@ -7,16 +7,21 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 
 def main(args):
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_use_double_quant=False,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
+    tokenizer = AutoTokenizer.from_pretrained(args.model_dir)
+
+    generation_config = GenerationConfig(
+        max_new_tokens=512,
+        do_sample=False,
+        eos_token_id=tokenizer.eos_token_id,
+        pad_token_id=tokenizer.pad_token_id,
     )
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_dir)
-    tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "left"
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.bfloat16,
+    )
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model_dir,
@@ -24,22 +29,11 @@ def main(args):
         device_map=args.device,
     )
 
-    generation_config = GenerationConfig(
-        max_new_tokens=512,
-        do_sample=False,
-        eos_token_id=model.config.eos_token_id,
-        pad_token_id=model.config.pad_token_id,
-    )
-
     for i, example in enumerate(DatasetDict.load_from_disk(str(args.dataset_dir))["test"]):
-        # Currently requires an open curly brace at the end of the prompt otherwise
-        # the model will generate an EOS token immediately. TODO: investigate ...
-
         prompt = example["prompt"]
         target = example["target"]
 
-        ext = "{"
-        ext_prompt = f"[INST] {prompt} [/INST]" + ext
+        ext_prompt = f"[INST] {prompt} [/INST]"
 
         input_ids = tokenizer(ext_prompt, return_tensors="pt", max_length=1024, truncation=True)["input_ids"]
         input_ids = input_ids.to(args.device)
@@ -49,7 +43,7 @@ def main(args):
             result = result[:, input_ids.shape[1] :]
 
         decoded = tokenizer.batch_decode(result, skip_special_tokens=True)
-        decoded = ext + decoded[0]
+        decoded = decoded[0]
 
         # -------------------------------------------------------------
         #  TODO: use an LLM to compare generated plan with target plan
@@ -70,7 +64,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = jsonargparse.ArgumentParser()
-    parser.add_argument("--model_dir", type=Path, default=Path("gba-planner-7B"))
+    parser.add_argument("--model_dir", type=Path, default=Path("gba-planner-7B-v0.2"))
     parser.add_argument("--dataset_dir", type=Path, default=Path("output", "dataset"))
     parser.add_argument("--device", type=str, default="cuda:0")
     main(parser.parse_args())

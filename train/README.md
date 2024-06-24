@@ -1,6 +1,10 @@
 ## Planner fine-tuning
 
-For fine-tuning a Mistral-7B-v0.1 based planner on trajectories generated in the GPT-4 based [agent simulation](../simulation/README.md), first create and activate the `bot-with-plan-autotrain` conda environment
+Planner fine-tuning starts from a pre-trained Mistral-7B model using trajectories generated in a GPT-4 based [agent simulation](../simulation/README.md). During fine-tuning, a planner learns to describe the task for the next step and to select an appropriate tool that can transform the task description into one or more actions. The set of available tools is learned from the trajectories. There's no need to prompt the planner with available tools at inference time which significantly reduces prompt sizes and inference latencies.
+
+### gba-planner-7B-v0.1
+
+For fine-tuning a Mistral-7B-v0.1 based planner, first create and activate the `bot-with-plan-autotrain` conda environment
 
 ```shell
 conda env create -f environment-autotrain.yml
@@ -37,44 +41,89 @@ autotrain llm \
   --quantization int4 \
   --block_size 1024 \
   --model_max_length 1024
+
+mv gba-planner-7B gba-planner-7B-v0.1
 ```
 
-During fine-tuning, the planner learns to select from the set of tools available in the trajectories and doesn't need to be configured with tools at inference time. This significantly reduces planner prompt sizes and inference latencies. A fine-tuned QLoRA model is available in the [krasserm/gba-planner-7B-v0.1](https://huggingface.co/krasserm/gba-planner-7B-v0.1) repository.
+ The loss is computed over the full sequence (prompt not masked).
 
-Switch back to the `bot-with-plan` conda environment and optionally inspect a few fine-tuned planner outputs by comparing them to GPT-4 based planner outputs.
+The fine-tuned QLoRA model is available in the [krasserm/gba-planner-7B-v0.1](https://huggingface.co/krasserm/gba-planner-7B-v0.1) repository. Quantized GGUF versions are available in the [krasserm/gba-planner-7B-v0.1-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF) repository.
+
+### gba-planner-7B-v0.2
+
+Version 0.2 planner models are based on Mistral-7B-v0.3 and trained with different loss functions:
+
+- `gba-planner-7B-v0.2` is fine-tuned with a loss over the full sequence (prompt not masked)
+- `gba-planner-7B-completion-only-v0.2` is fine-tuned with a loss over the completion only (prompt masked)
+
+Fine-tuning is done with the custom [sft_qlora.py](planner/sft_qlora.py) script instead of `autotrain` as `autotrain` doesn't support completion-only fine-tuning (at the time of writing). In conda environment `bot-with-plan` run:
+
+```shell
+accelerate launch \
+  --config_file train/planner/sft_qlora.yaml train/planner/sft_qlora.py \
+  --completion_only=false \
+  --packing=false \
+  --num_epochs=2 \
+  --output_dir=gba-planner-v0.2-tmp
+
+accelerate launch \
+  --config_file train/planner/sft_qlora.yaml train/planner/sft_qlora.py \
+  --completion_only=true \
+  --packing=false \
+  --num_epochs=2 \
+  --output_dir=gba-planner-completion-only-v0.2
+```
+
+Fine-tuned models are available in the [krasserm/gba-planner-v0.2](https://huggingface.co/krasserm/gba-planner-7B-v0.2) and [krasserm/gba-planner-v0.2-completion-only](https://huggingface.co/krasserm/gba-planner-7B-completion-only-v0.2) repositories.
+
+ After fine-tuning, optionally inspect a few model outputs generated from validation set prompts and compare them to GPT-4 based planner outputs:
 
 ```shell
 python train/planner/validate.py \
-  --model_dir gba-planner-7B \
+  --model_dir gba-planner-7B-v0.2 \
+  --dataset_dir output/dataset
+
+python train/planner/validate.py \
+  --model_dir gba-planner-7B-completion-only-v0.2 \
   --dataset_dir output/dataset
 ```
 
- Merge the trained QLoRA model back into the base model.
+ Merge the trained QLoRA model back into the base model:
 
 ```shell
 python train/planner/merge.py \
-  --model_dir gba-planner-7B \
-  --output_dir gba-planner-7B-merged
+  --model_dir gba-planner-7B-v0.2 \
+  --output_dir gba-planner-7B-v0.2-merged
+
+python train/planner/merge.py \
+  --model_dir gba-planner-7B-completion-only-v0.2 \
+  --output_dir gba-planner-7B-completion-only-v0.2-merged
 ```
 
-## GGUF conversion and quantization
-
-Convert the fine-tuned planner model into a llama.cpp compatible format and quantize it. Quantized models are also available in the [krasserm/gba-planner-7B-v0.1-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF) repo and can be served with a llama.cpp server.
-
-The following commands require a local copy of the llama.cpp repository (built with CUDA support). **TODO**: show how to do this with a llama.cpp Docker container. In the root directory of the llama.cpp repository run:
+Convert them to GGUF format
 
 ```shell
-ln -s /path/to/bot-with-plan gba
+docker run --gpus all --rm -v $(realpath .):/project ghcr.io/ggerganov/llama.cpp:full-cuda--b1-17b291a --convert \
+  /project/gba-planner-7B-v0.2-merged \
+  --outfile /project/models/gba-planner-7B-v0.2.gguf \
+  --outtype bf16
 
-python convert.py gba/gba-planner-7B-merged \
-  --outfile gba/gba-planner-7B-v0.1.gguf \
-  --outtype f16
-
-./build/bin/quantize \
-  gba/gba-planner-7B-v0.1.gguf \
-  gba/gba-planner-7B-v0.1-Q8_0.gguf Q8_0
-
-./build/bin/quantize \
-  gba/gba-planner-7B-v0.1.gguf \
-  gba/gba-planner-7B-v0.1-Q4_K_M.gguf Q4_K_M
+docker run --gpus all --rm -v $(realpath .):/project ghcr.io/ggerganov/llama.cpp:full-cuda--b1-17b291a --convert \
+  /project/gba-planner-7B-completion-only-v0.2-merged \
+  --outfile /project/models/gba-planner-7B-completion-only-v0.2.gguf \
+  --outtype bf16
 ```
+
+ and quantize them:
+
+```shell
+docker run --gpus all --rm -v $(realpath .):/project ghcr.io/ggerganov/llama.cpp:full-cuda--b1-17b291a --quantize \
+  /project/models/gba-planner-7B-v0.2.gguf \
+  /project/models/gba-planner-7B-v0.2-Q8_0.gguf Q8_0
+
+docker run --gpus all --rm -v $(realpath .):/project ghcr.io/ggerganov/llama.cpp:full-cuda--b1-17b291a --quantize \
+  /project/models/gba-planner-7B-completion-only-v0.2.gguf \
+  /project/models/gba-planner-7B-completion-only-v0.2-Q8_0.gguf Q8_0
+```
+
+Quantized models are available in the [krasserm/gba-planner-7B-v0.2-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.2-GGUF) and [krasserm/gba-planner-7B-completion-only-v0.2-GGUF](https://huggingface.co/krasserm/gba-planner-7B-completion-only-v0.2-GGUF) repositories.

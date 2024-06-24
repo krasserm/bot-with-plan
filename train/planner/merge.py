@@ -8,7 +8,6 @@ from transformers import AutoTokenizer
 
 def main(args):
     tokenizer = AutoTokenizer.from_pretrained(args.model_dir)
-    tokenizer.chat_template = None
 
     model = AutoPeftModelForCausalLM.from_pretrained(args.model_dir, torch_dtype=torch.bfloat16)
     model = model.merge_and_unload()
@@ -19,7 +18,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = jsonargparse.ArgumentParser()
-    parser.add_argument("--model_dir", type=Path, default=Path("gba-planner-7B"))
-    parser.add_argument("--output_dir", type=Path, default=Path("gba-planner-7B-merged"))
+    parser.add_argument("--model_dir", type=Path, default=Path("gba-planner-7B-v0.2"))
+    parser.add_argument("--output_dir", type=Path, default=Path("gba-planner-7B-v0.2-merged"))
 
     main(parser.parse_args())
