@@ -1,6 +1,6 @@
 ## Planner fine-tuning
 
-Planner fine-tuning starts from a pre-trained Mistral-7B model using trajectories generated in a GPT-4 based [agent simulation](../simulation/README.md). During fine-tuning, a planner learns to describe the task for the next step and to select an appropriate tool that can transform the task description into one or more actions. The set of available tools is learned from the trajectories. There's no need to prompt the planner with available tools at inference time which significantly reduces prompt sizes and inference latencies.
+Planner fine-tuning uses a Mistral-7B base model and trajectories generated in a GPT-4 based [agent simulation](../simulation/README.md). During fine-tuning, a planner learns to describe the task for the next step and to select an appropriate tool that executes one or more actions derived from the task description. The set of available tools is learned from the trajectories. There's no need to prompt the planner with available tools at inference time which significantly reduces prompt sizes and inference latencies.
 
 ### gba-planner-7B-v0.1
 
@@ -53,8 +53,8 @@ The fine-tuned QLoRA model is available in the [krasserm/gba-planner-7B-v0.1](ht
 
 Version 0.2 planner models are based on Mistral-7B-v0.3 and trained with different loss functions:
 
-- `gba-planner-7B-v0.2` is fine-tuned with a loss over the full sequence (prompt not masked)
-- `gba-planner-7B-completion-only-v0.2` is fine-tuned with a loss over the completion only (prompt masked)
+- `gba-planner-7B-v0.2` is fine-tuned with a loss over the full sequence i.e. prompt and completion tokens
+- `gba-planner-7B-completion-only-v0.2` is fine-tuned with a loss over completion tokens only (prompt masked)
 
 Fine-tuning is done with the custom [sft_qlora.py](planner/sft_qlora.py) script instead of `autotrain` as `autotrain` doesn't support completion-only fine-tuning (at the time of writing). In conda environment `bot-with-plan` run:
 

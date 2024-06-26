@@ -91,7 +91,7 @@ python simulation/data/request/multi_step.py \
 Evaluated are the following planners:
 
 - the GPT-4 based planner used in the previous section but without constraining it to generate direct answers for single-step requests
-- a Mistral-7B based fine-tuned student planner
+- a Mistral-7B based fine-tuned planner
 - a Mistral-7B-Instruct based zero-shot planner
 
 Since the simulated `search_internet` and `search_wikipedia` tools are configured to return no answer with a probability of `0.1` or only a partial answer with a probability of `0.1`, four evaluation runs are repeated for each planner.
@@ -162,10 +162,10 @@ The statistics over these runs are calculated and summarized in [planner_evaluat
 
 ### Prompt masking
 
-Instead of running this evaluation yourself, you can also download the complete output of the following commands from [here](https://martin-krasser.com/gba/gba-output-eval-masking.zip). This evaluation re-uses [requests generated](#generate-requests) in the [previous section](#planner-evaluation). Evaluated are two [planner models](../train/README.md#gba-planner-7b-v02) (see [setup](../README.md#setup) for serving details):
+Instead of running this evaluation yourself, you can also download the complete output of the following commands from [here](https://martin-krasser.com/gba/gba-output-eval-masking.zip). The evaluation re-uses requests generated in the [previous section](#planner-evaluation). Evaluated are two [planner models](../train/README.md#gba-planner-7b-v02) (see [setup](../README.md#setup) for serving details):
 
-- `gba-planner-7B-v0.2`, fine-tuned with a loss over the full sequence (prompt not masked)
-- `gba-planner-7B-completion-only-v0.2`, fine-tuned with a loss over the completion only (prompt masked)
+- `gba-planner-7B-v0.2`, fine-tuned with a loss over the full sequence i.e. prompt and completion tokens
+- `gba-planner-7B-completion-only-v0.2`, fine-tuned with a loss over completion tokens only (prompt masked)
 
 Evaluation of `gba-planner-v0.2`:
 

@@ -18,6 +18,7 @@ See also [related work](#related-work).
 You can find more details in these articles:
 
 - [Planner fine-tuning on synthetic agent trajectories](https://krasserm.github.io/2024/05/31/planner-fine-tuning/)
+- [Impact of prompt masking on LLM agent planning performance](https://krasserm.github.io/2024/06/26/planner-prompt-masking/)
 - [Separation of planning concerns in LLM agents](https://krasserm.github.io/2024/03/06/modular-agent/)
 - [Schema-guided generation with open LLMs](https://krasserm.github.io/2023/12/18/llm-json-mode/)
 - [Schema-guided generation in LangChain agents](https://krasserm.github.io/2023/12/10/grammar-based-agents/)
@@ -55,9 +56,9 @@ A stricter separation of concerns in a LLM agent also requires reliable communic
 
 ### Environments
 
-- Simulation environment. Interface is a set of [simulated tools](simulation/tools/), instead of real ones. For example, a simulated `search_internet` tool, backed by GPT-4, generates search results from GPT-4's internal memory instead of actually searching the internet. For learning to plan it is less important if observation provided by tools are factual or hallucinated, it is more important to make the right decisions based on whatever observations are made. In a simulation environment it is often easier to generate agent trajectories than in a real environment.
+- *Simulation environment*. Interface is a set of [simulated tools](simulation/tools/), instead of real ones. For example, a simulated `search_internet` tool, backed by GPT-4, generates search results from GPT-4's internal memory instead of actually searching the internet. For learning to plan it is less important if observation provided by tools are factual or hallucinated, it is more important to make the right decisions based on whatever observations are made. In a simulation environment it is often easier to generate agent trajectories than in a real environment.
 
-- Real environment. Interface is a set of [real tools](gba/tools/). In this environment, for example, a RAG-based `search_internet` tool actually searches the internet and summarizes retrieved information with an LLM such that a planner can conveniently handle it. A planner fine-tuned on trajectories from an agent simulation generalizes well to observations made in a real environment. If a different set of real tools is needed for an application, corresponding simulated tools can easily be implemented and application-specific trajectories generated for planner fine-tuning.
+- *Real environment*. Interface is a set of [real tools](gba/tools/). In this environment, for example, a RAG-based `search_internet` tool actually searches the internet and summarizes retrieved information with an LLM such that a planner can conveniently handle it. A planner fine-tuned on trajectories from an agent simulation generalizes well to observations made in a real environment. If a different set of real tools is needed for an application, corresponding simulated tools can easily be implemented and application-specific trajectories generated for planner fine-tuning.
 
 ### Planners
 
@@ -80,15 +81,15 @@ Evaluated on a test set of 50 user requests, generated for a wide range of topic
 - *bad task rate* is the fraction of steps with a task description rating of 3 or lower.
 - *completion rate* is the number of requests that the agent could complete with a final answer in 10 steps or less.
 
-Another evaluation investigates if prompt masking during fine-tuning significantly impacts planner performance. With prompt masking, the loss is computed over the completion only. Without prompt masking the loss is computed over the full sequence i.e. the prompt and completion (details [here](simulation/README.md#prompt-masking)).
+Another evaluation investigates if prompt masking during fine-tuning significantly impacts planner performance. With prompt masking, the loss is computed over completion tokens only. Without prompt masking the loss is computed over the full sequence i.e. prompt and completion tokens (details [here](simulation/README.md#prompt-masking)).
 
-| series                | pass_rate   | bad_task_rate | completion_rate |
-|:----------------------|:-----------:|:-------------:|:---------------:|
-| prompt-and-completion | 0.88 ± 0.01 | 0.12 ± 0.01   | 0.99 ± 0.01     |
-| completion-only       | 0.85 ± 0.01 | 0.14 ± 0.01   | 0.98 ± 0.01     |
-| gpt-4                 | 0.90 ± 0.01 | 0.11 ± 0.01   | 0.98 ± 0.01     |
+| series                 | pass_rate   | bad_task_rate | completion_rate |
+|:-----------------------|:-----------:|:-------------:|:---------------:|
+| fine-tuned w/ masking  | 0.85 ± 0.01 | 0.14 ± 0.01   | 0.98 ± 0.01     |
+| fine-tuned w/o masking | 0.88 ± 0.01 | 0.12 ± 0.01   | 0.99 ± 0.01     |
+| gpt-4                  | 0.90 ± 0.01 | 0.11 ± 0.01   | 0.98 ± 0.01     |
 
-Prompt masking seems to decrease performance but it is not significant e.g. a *t-test* on the metrics of `prompt-and-completion` and `completion-only` series gives a p-value of `0.10` for `pass_rate` and `0.22` for `bad_task_rate`.
+Prompt masking seems to decrease performance but it is not significant e.g. a *t-test* on the metrics of series `fine-tuned w/ masking` and `fine-tuned w/o masking` gives a p-value of `0.10` for `pass_rate` and `0.22` for `bad_task_rate`.
 
 ## Getting started
 
@@ -172,7 +173,7 @@ See also [search tools setup](gba/tools/search/README.md#setup) for further deta
 
 - [krasserm/gba-planner-7B-v0.1-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.1-GGUF)
 - [krasserm/gba-planner-7B-v0.2-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.2-GGUF)
-- [krasserm/gba-planner-7B-completion-only-v0.2-GGUF](https://huggingface.co/krasserm/gba-planner-7B-v0.2-GGUF)
+- [krasserm/gba-planner-7B-completion-only-v0.2-GGUF](https://huggingface.co/krasserm/gba-planner-7B-completion-only-v0.2-GGUF)
 
 ### Datasets
 
