@@ -3,21 +3,12 @@ import os
 import jsonargparse
 import torch
 from datasets import DatasetDict
-from peft import get_peft_model, prepare_model_for_kbit_training, LoraConfig
+from peft import LoraConfig
+from peft.utils.other import fsdp_auto_wrap_policy
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 from trl import SFTConfig, SFTTrainer, get_kbit_device_map
 
 from train.planner.utils import create_tokenizer, create_completion_only_collator
-
-
-def create_model(repo_id, bnb_config=None, lora_config=None):
-    model = AutoModelForCausalLM.from_pretrained(
-        repo_id, quantization_config=bnb_config, device_map=get_kbit_device_map()
-    )
-    model = prepare_model_for_kbit_training(model)
-    if lora_config is not None:
-        model = get_peft_model(model, lora_config)
-    return model
 
 
 def main(args):
@@ -29,6 +20,7 @@ def main(args):
         bnb_4bit_quant_type="nf4",
         bnb_4bit_use_double_quant=True,
         bnb_4bit_compute_dtype=torch.bfloat16,
+        bnb_4bit_quant_storage=torch.bfloat16,
     )
 
     lora_config = LoraConfig(
@@ -40,7 +32,13 @@ def main(args):
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
     )
 
-    model = create_model(args.base_model, bnb_config=bnb_config, lora_config=lora_config)
+    model = AutoModelForCausalLM.from_pretrained(
+        args.base_model,
+        quantization_config=bnb_config,
+        device_map=get_kbit_device_map(),
+        torch_dtype=torch.bfloat16,
+    )
+
     tokenizer = create_tokenizer(args.base_model)
     collator = create_completion_only_collator(tokenizer) if args.completion_only else None
     dataset = DatasetDict.load_from_disk(args.dataset_dir)
@@ -54,9 +52,8 @@ def main(args):
         packing=args.packing,
         per_device_train_batch_size=args.per_device_batch_size,
         per_device_eval_batch_size=args.per_device_batch_size,
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
         gradient_checkpointing=args.gradient_checkpointing,
-        gradient_checkpointing_kwargs={"use_reentrant": False},
+        gradient_checkpointing_kwargs={"use_reentrant": True},
         neftune_noise_alpha=args.neftune_noise_alpha,
         num_train_epochs=args.num_epochs,
         learning_rate=args.learning_rate,
@@ -68,19 +65,26 @@ def main(args):
         dataset_kwargs={"add_special_tokens": False, "append_concat_token": False},
         dataset_text_field="text",
         dataloader_num_workers=2,
-        load_best_model_at_end=True,
     )
 
     sft_trainer = SFTTrainer(
         model,
         args=sft_config,
+        peft_config=lora_config,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=collator,
         tokenizer=tokenizer,
     )
 
+    fsdp_plugin = sft_trainer.accelerator.state.fsdp_plugin
+    fsdp_plugin.auto_wrap_policy = fsdp_auto_wrap_policy(sft_trainer.model)
+
     sft_trainer.train(resume_from_checkpoint=False)
+
+    if sft_trainer.is_fsdp_enabled:
+        sft_trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
+
     sft_trainer.save_model()
 
 
@@ -102,7 +106,6 @@ if __name__ == "__main__":
     parser.add_argument("--completion_only", type=bool, default=False)
     parser.add_argument("--packing", type=bool, default=False)
     parser.add_argument("--num_epochs", type=int, default=3)
-    parser.add_argument("--per_device_batch_size", type=int, default=1)
-    parser.add_argument("--gradient_accumulation_steps", type=int, default=2)
+    parser.add_argument("--per_device_batch_size", type=int, default=4)
 
     main(parser.parse_args())

@@ -56,7 +56,7 @@ Version 0.2 planner models are based on Mistral-7B-v0.3 and trained with differe
 - `gba-planner-7B-v0.2` is fine-tuned with a loss over the full sequence i.e. prompt and completion tokens
 - `gba-planner-7B-completion-only-v0.2` is fine-tuned with a loss over completion tokens only (prompt masked)
 
-Fine-tuning is done with the custom [sft_qlora.py](planner/sft_qlora.py) script instead of `autotrain` as `autotrain` doesn't support completion-only fine-tuning (at the time of writing). In conda environment `bot-with-plan` run:
+The following commands have been tested on a machine with 4 RTX 3080Ti GPUs (12GB VRAM each). Fine-tuning is done with the custom [sft_qlora.py](planner/sft_qlora.py) script instead of `autotrain` as `autotrain` doesn't support completion-only fine-tuning (at the time of writing). In conda environment `bot-with-plan` run:
 
 ```shell
 accelerate launch \
@@ -64,14 +64,36 @@ accelerate launch \
   --completion_only=false \
   --packing=false \
   --num_epochs=2 \
-  --output_dir=gba-planner-v0.2-tmp
+  --gradient_accumulation_steps=2 \
+  --output_dir=gba-planner-7B-v0.2
 
 accelerate launch \
   --config_file train/planner/sft_qlora.yaml train/planner/sft_qlora.py \
   --completion_only=true \
   --packing=false \
   --num_epochs=2 \
-  --output_dir=gba-planner-completion-only-v0.2
+  --gradient_accumulation_steps=2 \
+  --output_dir=gba-planner-7B-completion-only-v0.2
+```
+
+These commands replicate the model across GPUs with DDP. For distributed FSDP training (experimental), which allows larger batch sizes without gradient accumulation, use the [sft_qlora_fsdp.py](planner/sft_qlora_fsdp.py) script:
+
+```shell
+accelerate launch \
+  --config_file train/planner/sft_qlora_fsdp.yaml train/planner/sft_qlora_fsdp.py \
+  --completion_only=false \
+  --packing=false \
+  --num_epochs=2 \
+  --per_device_batch_size=4 \
+  --output_dir=gba-planner-7B-v0.2
+
+accelerate launch \
+  --config_file train/planner/sft_qlora_fsdp.yaml train/planner/sft_qlora_fsdp.py \
+  --completion_only=true \
+  --packing=false \
+  --num_epochs=2 \
+  --per_device_batch_size=4 \
+  --output_dir=gba-planner-7B-completion-only-v0.2
 ```
 
 Fine-tuned models are available in the [krasserm/gba-planner-v0.2](https://huggingface.co/krasserm/gba-planner-7B-v0.2) and [krasserm/gba-planner-v0.2-completion-only](https://huggingface.co/krasserm/gba-planner-7B-completion-only-v0.2) repositories.
