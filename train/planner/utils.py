@@ -1,3 +1,4 @@
+import torch
 from transformers import AutoTokenizer
 from trl import DataCollatorForCompletionOnlyLM
 
@@ -17,3 +18,10 @@ def create_tokenizer(repo_id, model_max_length=1024, pad_token_id=0, padding_sid
 
 def create_completion_only_collator(tokenizer):
     return DataCollatorForCompletionOnlyLM("[/INST]", tokenizer=tokenizer)
+
+
+def create_attn_kwargs(flash_attn: bool = False):
+    if flash_attn:
+        return dict(attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
+    else:
+        return {}

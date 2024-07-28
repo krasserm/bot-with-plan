@@ -5,6 +5,8 @@ import torch
 from datasets import DatasetDict
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, GenerationConfig
 
+from train.planner.utils import create_attn_kwargs
+
 
 def main(args):
     tokenizer = AutoTokenizer.from_pretrained(args.model_dir)
@@ -27,6 +29,7 @@ def main(args):
         args.model_dir,
         quantization_config=bnb_config,
         device_map=args.device,
+        **create_attn_kwargs(flash_attn=args.flash_attn),
     )
 
     for i, example in enumerate(DatasetDict.load_from_disk(str(args.dataset_dir))["test"]):
@@ -67,4 +70,5 @@ if __name__ == "__main__":
     parser.add_argument("--model_dir", type=Path, default=Path("gba-planner-7B-v0.2"))
     parser.add_argument("--dataset_dir", type=Path, default=Path("output", "dataset"))
     parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--flash_attn", type=bool, default=False)
     main(parser.parse_args())

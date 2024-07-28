@@ -6,4 +6,5 @@ dependencies:
   - python=3.10
   - pytorch=2.2
   - pytorch-cuda=12.1
+  - cuda-toolkit=12.1
   - pip

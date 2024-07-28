@@ -101,6 +101,9 @@ Clone the project from GitHub, create a conda environment and install dependenci
 conda env create -f environment.yml
 conda activate bot-with-plan
 poetry install
+
+# Only needed when FlashAttention-2 is used
+pip install flash-attn --no-build-isolation
 ```
 
 Download models:

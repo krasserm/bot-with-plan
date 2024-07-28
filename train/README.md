@@ -76,6 +76,19 @@ accelerate launch \
   --output_dir=gba-planner-7B-completion-only-v0.2
 ```
 
+Training the model with FlashAttention-2 requires `packing=true` and computing the loss over the full sequence:
+
+```shell
+accelerate launch \
+  --config_file train/planner/sft_qlora.yaml train/planner/sft_qlora.py \
+  --completion_only=false \
+  --packing=true \
+  --flash_attn=true \
+  --num_epochs=2 \
+  --gradient_accumulation_steps=2 \
+  --output_dir=gba-planner-7B-v0.2
+```
+
 These commands replicate the model across GPUs with DDP. For distributed FSDP training (experimental), which allows larger batch sizes without gradient accumulation, use the [sft_qlora_fsdp.py](planner/sft_qlora_fsdp.py) script:
 
 ```shell
@@ -108,6 +121,15 @@ python train/planner/validate.py \
 python train/planner/validate.py \
   --model_dir gba-planner-7B-completion-only-v0.2 \
   --dataset_dir output/dataset
+```
+
+With FlashAttention-2:
+
+```shell
+python train/planner/validate.py \
+  --model_dir gba-planner-7B-v0.2 \
+  --dataset_dir output/dataset \
+  --flash_attn=true
 ```
 
  Merge the trained QLoRA model back into the base model:

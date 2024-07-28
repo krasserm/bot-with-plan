@@ -7,12 +7,15 @@ from peft import get_peft_model, prepare_model_for_kbit_training, LoraConfig
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 from trl import SFTConfig, SFTTrainer, get_kbit_device_map
 
-from train.planner.utils import create_tokenizer, create_completion_only_collator
+from train.planner.utils import create_attn_kwargs, create_tokenizer, create_completion_only_collator
 
 
-def create_model(repo_id, bnb_config=None, lora_config=None):
+def create_model(repo_id, bnb_config=None, lora_config=None, flash_attn=False):
     model = AutoModelForCausalLM.from_pretrained(
-        repo_id, quantization_config=bnb_config, device_map=get_kbit_device_map()
+        repo_id,
+        quantization_config=bnb_config,
+        device_map=get_kbit_device_map(),
+        **create_attn_kwargs(flash_attn=flash_attn),
     )
     model = prepare_model_for_kbit_training(model)
     if lora_config is not None:
@@ -40,7 +43,7 @@ def main(args):
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
     )
 
-    model = create_model(args.base_model, bnb_config=bnb_config, lora_config=lora_config)
+    model = create_model(args.base_model, bnb_config=bnb_config, lora_config=lora_config, flash_attn=args.flash_attn)
     tokenizer = create_tokenizer(args.base_model)
     collator = create_completion_only_collator(tokenizer) if args.completion_only else None
     dataset = DatasetDict.load_from_disk(args.dataset_dir)
@@ -104,5 +107,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_epochs", type=int, default=3)
     parser.add_argument("--per_device_batch_size", type=int, default=1)
     parser.add_argument("--gradient_accumulation_steps", type=int, default=2)
+    parser.add_argument("--flash_attn", type=bool, default=False)
 
     main(parser.parse_args())
